@@ -77,6 +77,33 @@ CREATE TABLE IF NOT EXISTS funding_sources (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create recurring_activities table
+CREATE TABLE IF NOT EXISTS recurring_activities (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  location VARCHAR(255) NOT NULL,
+  day_of_week SMALLINT NOT NULL, -- 0 for Sunday, 1 for Monday, etc.
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  recurrence_type VARCHAR(20) NOT NULL CHECK (recurrence_type IN ('weekly', 'biweekly', 'monthly')),
+  start_date DATE NOT NULL, -- When the recurrence starts
+  end_date DATE, -- Optional end date for the recurrence (NULL means indefinite)
+  type VARCHAR(20) NOT NULL CHECK (type IN ('with_adherents', 'without_adherents')),
+  max_participants INTEGER,
+  transport_available BOOLEAN DEFAULT FALSE,
+  transport_capacity INTEGER DEFAULT 0,
+  is_paid BOOLEAN DEFAULT FALSE,
+  price DECIMAL(10, 2) DEFAULT 0.00,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add a reference to recurring activity in the activities table
+ALTER TABLE activities 
+ADD COLUMN recurring_activity_id INTEGER REFERENCES recurring_activities(id) ON DELETE SET NULL;
+
 -- Documents for the GED (optional feature)
 CREATE TABLE IF NOT EXISTS documents (
   id SERIAL PRIMARY KEY,

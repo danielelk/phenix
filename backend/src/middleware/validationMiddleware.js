@@ -187,9 +187,6 @@ exports.schemas = {
     };
   },
 
-  /**
-   * Activity creation validation
-   */
   activityCreate: (data) => {
     const errors = [];
 
@@ -254,6 +251,17 @@ exports.schemas = {
       });
     }
 
+    // Validate price if activity is paid
+    if (
+      data.isPaid &&
+      (data.price === undefined || parseFloat(data.price) <= 0)
+    ) {
+      errors.push({
+        context: { key: "price" },
+        message: "Le prix doit être supérieur à 0 si l'activité est payante",
+      });
+    }
+
     return {
       error: errors.length > 0 ? { details: errors } : null,
       value: data,
@@ -283,7 +291,8 @@ exports.schemas = {
       if (start > end) {
         errors.push({
           context: { key: "endDate" },
-          message: "La date de fin doit être après la date de début",
+          message:
+            "La date/heure de fin doit être après la date/heure de début",
         });
       }
     }
@@ -308,6 +317,17 @@ exports.schemas = {
         context: { key: "transportCapacity" },
         message:
           "La capacité de transport doit être au moins 1 si le transport est disponible",
+      });
+    }
+
+    // Validate price if activity is paid
+    if (
+      data.isPaid === true &&
+      (data.price === undefined || parseFloat(data.price) <= 0)
+    ) {
+      errors.push({
+        context: { key: "price" },
+        message: "Le prix doit être supérieur à 0 si l'activité est payante",
       });
     }
 

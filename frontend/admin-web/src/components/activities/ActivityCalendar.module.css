@@ -172,6 +172,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-right: 1rem;
 }
 
 .moreActivities {
@@ -192,13 +193,10 @@
   padding: 1.5rem;
   overflow-y: auto;
   box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  z-index: 10;
 }
 
 .detailsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 1.5rem;
 }
 
@@ -207,21 +205,47 @@
   font-size: var(--font-size-lg);
 }
 
-.editButton {
+.actionsButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionsButtonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.editButton,
+.participantsButton {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background-color: var(--color-background-dark);
   border: none;
   border-radius: var(--border-radius);
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background-color 0.2s;
+  width: 100%;
+}
+
+.editButton {
+  background-color: var(--color-background-dark);
 }
 
 .editButton:hover {
   background-color: var(--color-border);
+}
+
+.participantsButton {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.participantsButton:hover {
+  background-color: var(--color-primary-dark);
 }
 
 .detailsContent {
@@ -274,6 +298,29 @@
   background-color: var(--color-border);
 }
 
+.participantsOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.participantsContainer {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .activityDetails {
@@ -306,6 +353,11 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    z-index: 1100;
+    z-index: 100;
+  }
+
+  .participantsContainer {
+    max-width: calc(100% - 2rem);
+    max-height: calc(100% - 2rem);
   }
 }

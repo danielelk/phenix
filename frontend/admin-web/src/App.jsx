@@ -15,6 +15,7 @@ import Activities from "./pages/activities/Activities";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./routes";
 import "./styles/global.css";
+import Planning from "./pages/planning/Planning";
 
 function App() {
   return (
@@ -49,7 +50,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<Users />} />
             <Route path="/activities" element={<Activities />} />
-            {/* Add other protected routes here */}
+            <Route path="/planning" element={<Planning />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

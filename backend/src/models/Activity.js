@@ -6,11 +6,6 @@ const activityTypes = {
 };
 
 class Activity {
-  /**
-   * Create a new activity
-   * @param {Object} activityData - Activity data
-   * @returns {Promise<Object>} Newly created activity
-   */
   static async create(activityData) {
     const {
       title,
@@ -22,6 +17,9 @@ class Activity {
       maxParticipants,
       transportAvailable,
       transportCapacity,
+      isPaid,
+      price,
+      recurringActivityId, // New field
       createdBy,
     } = activityData;
 
@@ -37,9 +35,12 @@ class Activity {
         max_participants,
         transport_available,
         transport_capacity,
+        is_paid,
+        price,
+        recurring_activity_id, 
         created_by
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
       RETURNING *
     `;
 
@@ -53,6 +54,9 @@ class Activity {
       maxParticipants,
       transportAvailable,
       transportCapacity,
+      isPaid || false,
+      isPaid ? price || 0 : 0,
+      recurringActivityId || null,
       createdBy,
     ];
 
@@ -61,11 +65,6 @@ class Activity {
     return rows[0];
   }
 
-  /**
-   * Find activity by ID
-   * @param {number} id - Activity ID
-   * @returns {Promise<Object|null>} Activity object or null
-   */
   static async findById(id) {
     const query = "SELECT * FROM activities WHERE id = $1";
     const { rows } = await db.query(query, [id]);
@@ -73,13 +72,6 @@ class Activity {
     return rows[0] || null;
   }
 
-  /**
-   * Get activities for a date range
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {Object} options - Query options
-   * @returns {Promise<Array>} Activities
-   */
   static async findByDateRange(startDate, endDate, options = {}) {
     const { type, accompagnateurId } = options;
 
@@ -109,11 +101,6 @@ class Activity {
     return rows;
   }
 
-  /**
-   * Get all activities (with pagination and filtering)
-   * @param {Object} options - Query options
-   * @returns {Promise<Object>} Activities and count
-   */
   static async findAll(options = {}) {
     const {
       limit = 10,
@@ -127,7 +114,6 @@ class Activity {
 
     const offset = (page - 1) * limit;
 
-    // Build WHERE clause for filtering
     let whereClause = "";
     const params = [];
 
@@ -148,15 +134,12 @@ class Activity {
       whereClause += `(title ILIKE $${params.length} OR description ILIKE $${params.length} OR location ILIKE $${params.length})`;
     }
 
-    // Add WHERE if any filters are applied
     whereClause = whereClause ? `WHERE ${whereClause}` : "";
 
-    // Count total matching records
     const countQuery = `SELECT COUNT(*) FROM activities ${whereClause}`;
     const { rows: countRows } = await db.query(countQuery, params);
     const totalCount = parseInt(countRows[0].count, 10);
 
-    // Get paginated results
     const query = `
       SELECT 
         a.*,
@@ -181,12 +164,6 @@ class Activity {
     };
   }
 
-  /**
-   * Update activity
-   * @param {number} id - Activity ID
-   * @param {Object} activityData - Activity data to update
-   * @returns {Promise<Object>} Updated activity
-   */
   static async update(id, activityData) {
     const allowedFields = [
       "title",
@@ -198,14 +175,14 @@ class Activity {
       "max_participants",
       "transport_available",
       "transport_capacity",
+      "is_paid",
+      "price",
     ];
 
-    // Build SET clause for update
     const updates = [];
     const values = [];
 
     Object.keys(activityData).forEach((key) => {
-      // Convert camelCase to snake_case for DB
       const dbField = key.replace(/([A-Z])/g, "_$1").toLowerCase();
 
       if (allowedFields.includes(dbField)) {
@@ -214,14 +191,12 @@ class Activity {
       }
     });
 
-    // Add updated_at
     updates.push(`updated_at = NOW()`);
 
     if (updates.length === 0) {
       throw new Error("No valid fields to update");
     }
 
-    // Add id as the last parameter
     values.push(id);
 
     const query = `
@@ -240,31 +215,22 @@ class Activity {
     return rows[0];
   }
 
-  /**
-   * Delete activity
-   * @param {number} id - Activity ID
-   * @returns {Promise<boolean>} Success flag
-   */
   static async delete(id) {
-    // Start a transaction to delete participants and the activity
     const client = await db.getClient();
 
     try {
       await client.query("BEGIN");
 
-      // Delete all participants
       await client.query(
         "DELETE FROM activity_participants WHERE activity_id = $1",
         [id]
       );
 
-      // Delete all accompagnateurs
       await client.query(
         "DELETE FROM activity_accompagnateurs WHERE activity_id = $1",
         [id]
       );
 
-      // Delete the activity
       const { rows } = await client.query(
         "DELETE FROM activities WHERE id = $1 RETURNING id",
         [id]
@@ -281,15 +247,7 @@ class Activity {
     }
   }
 
-  /**
-   * Add participant to activity
-   * @param {number} activityId - Activity ID
-   * @param {number} userId - User ID
-   * @param {boolean} needsTransport - Whether user needs transport
-   * @returns {Promise<Object>} Participant data
-   */
   static async addParticipant(activityId, userId, needsTransport = false) {
-    // Check if already a participant
     const checkQuery =
       "SELECT * FROM activity_participants WHERE activity_id = $1 AND user_id = $2";
     const { rows: checkRows } = await db.query(checkQuery, [

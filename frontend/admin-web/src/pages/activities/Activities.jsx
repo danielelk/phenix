@@ -99,6 +99,12 @@ const Activities = () => {
     setCurrentDate(date);
   };
 
+  // Handle participants changed
+  const handleParticipantsChanged = () => {
+    // Refresh activities to get updated participant counts
+    fetchActivities();
+  };
+
   return (
     <div className={styles.activitiesPage}>
       <div className={styles.pageHeader}>
@@ -159,6 +165,7 @@ const Activities = () => {
               onEditActivity={handleEditActivity}
               currentDate={currentDate}
               onMonthChange={handleMonthChange}
+              onParticipantsChanged={handleParticipantsChanged}
             />
           ) : (
             <div className={styles.listView}>

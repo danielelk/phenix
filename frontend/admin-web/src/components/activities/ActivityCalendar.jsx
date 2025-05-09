@@ -20,14 +20,18 @@ import {
   FiClock,
   FiMapPin,
 } from "react-icons/fi";
+import { MdOutlineEuroSymbol } from "react-icons/md";
+import ActivityParticipants from "./ActivityParticipants";
 
 const ActivityCalendar = ({
   activities,
   onEditActivity,
   currentDate,
   onMonthChange,
+  onParticipantsChanged,
 }) => {
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [showParticipants, setShowParticipants] = useState(false);
 
   // Navigate to previous month
   const previousMonth = () => {
@@ -85,7 +89,20 @@ const ActivityCalendar = ({
     );
   };
 
-  // Render activity details
+  // Handle participants management
+  const handleManageParticipants = () => {
+    if (selectedActivity && selectedActivity.type === "with_adherents") {
+      setShowParticipants(true);
+    }
+  };
+
+  // Handle participants changed
+  const handleParticipantsChanged = () => {
+    if (onParticipantsChanged) {
+      onParticipantsChanged();
+    }
+  };
+
   const renderActivityDetails = () => {
     if (!selectedActivity) return null;
 
@@ -95,14 +112,26 @@ const ActivityCalendar = ({
     return (
       <div className={styles.activityDetails}>
         <div className={styles.detailsHeader}>
-          <h3>{selectedActivity.title}</h3>
-          <button
-            className={styles.editButton}
-            onClick={() => onEditActivity(selectedActivity)}
-          >
-            <FiEdit size={16} />
-            <span>Modifier</span>
-          </button>
+          <h3 className={styles.activityTitle}>{selectedActivity.title}</h3>
+
+          <div className={styles.actionsButtonsContainer}>
+            {selectedActivity.type === "with_adherents" && (
+              <button
+                className={styles.participantsButton}
+                onClick={handleManageParticipants}
+              >
+                <FiUsers size={16} />
+                <span>Participants</span>
+              </button>
+            )}
+            <button
+              className={styles.editButton}
+              onClick={() => onEditActivity(selectedActivity)}
+            >
+              <FiEdit size={16} />
+              <span>Modifier</span>
+            </button>
+          </div>
         </div>
 
         <div className={styles.detailsContent}>
@@ -148,6 +177,16 @@ const ActivityCalendar = ({
               )}
             </div>
           </div>
+
+          {selectedActivity.is_paid && (
+            <div className={styles.detailItem}>
+              <MdOutlineEuroSymbol className={styles.detailIcon} />
+              <div>
+                <strong>Activité payante:</strong>{" "}
+                {selectedActivity.price ? `${selectedActivity.price} €` : "-"}
+              </div>
+            </div>
+          )}
 
           {selectedActivity.description && (
             <div className={styles.description}>
@@ -260,6 +299,18 @@ const ActivityCalendar = ({
         {renderCalendar()}
 
         {selectedActivity && renderActivityDetails()}
+
+        {showParticipants && selectedActivity && (
+          <div className={styles.participantsOverlay}>
+            <div className={styles.participantsContainer}>
+              <ActivityParticipants
+                activity={selectedActivity}
+                onClose={() => setShowParticipants(false)}
+                onUpdate={handleParticipantsChanged}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

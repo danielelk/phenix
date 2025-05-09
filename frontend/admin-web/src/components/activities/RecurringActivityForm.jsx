@@ -1,60 +1,79 @@
 import React, { useState, useEffect } from "react";
-import styles from "./ActivityForm.module.css";
+import styles from "./RecurringActivityForm.module.css";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { format, parseISO } from "date-fns";
+import { format, parse } from "date-fns";
+import { fr } from "date-fns/locale";
 
-const ActivityForm = ({ activity, onSubmit, onCancel }) => {
+const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
     location: "",
+    dayOfWeek: 1, // Monday
+    startTime: "09:00",
+    endTime: "10:00",
+    recurrenceType: "weekly",
+    startDate: format(new Date(), "yyyy-MM-dd"),
+    endDate: "",
     type: "with_adherents",
     maxParticipants: "",
     transportAvailable: false,
     transportCapacity: "",
     isPaid: false,
     price: "",
+    regenerateInstances: true,
   });
 
+  // Days of the week
+  const daysOfWeek = [
+    { value: 0, label: "Dimanche" },
+    { value: 1, label: "Lundi" },
+    { value: 2, label: "Mardi" },
+    { value: 3, label: "Mercredi" },
+    { value: 4, label: "Jeudi" },
+    { value: 5, label: "Vendredi" },
+    { value: 6, label: "Samedi" },
+  ];
+
+  // Recurrence types
+  const recurrenceTypes = [
+    { value: "weekly", label: "Hebdomadaire" },
+    { value: "biweekly", label: "Bimensuelle" },
+    { value: "monthly", label: "Mensuelle" },
+  ];
+
+  // If editing an existing recurring activity, pre-fill the form
   useEffect(() => {
-    if (activity) {
-      const startDate = parseISO(activity.start_date);
-      const endDate = parseISO(activity.end_date);
-
+    if (recurringActivity) {
       setFormData({
-        title: activity.title || "",
-        description: activity.description || "",
-        startDate: format(startDate, "yyyy-MM-dd"),
-        startTime: format(startDate, "HH:mm"),
-        endDate: format(endDate, "yyyy-MM-dd"),
-        endTime: format(endDate, "HH:mm"),
-        location: activity.location || "",
-        type: activity.type || "with_adherents",
-        maxParticipants: activity.max_participants || "",
-        transportAvailable: activity.transport_available || false,
-        transportCapacity: activity.transport_capacity || "",
-        isPaid: activity.is_paid || false,
-        price: activity.price ? activity.price.toString() : "",
+        title: recurringActivity.title || "",
+        description: recurringActivity.description || "",
+        location: recurringActivity.location || "",
+        dayOfWeek: recurringActivity.day_of_week ?? 1,
+        startTime: recurringActivity.start_time || "09:00",
+        endTime: recurringActivity.end_time || "10:00",
+        recurrenceType: recurringActivity.recurrence_type || "weekly",
+        startDate: recurringActivity.start_date
+          ? format(new Date(recurringActivity.start_date), "yyyy-MM-dd")
+          : "",
+        endDate: recurringActivity.end_date
+          ? format(new Date(recurringActivity.end_date), "yyyy-MM-dd")
+          : "",
+        type: recurringActivity.type || "with_adherents",
+        maxParticipants: recurringActivity.max_participants || "",
+        transportAvailable: recurringActivity.transport_available || false,
+        transportCapacity: recurringActivity.transport_capacity || "",
+        isPaid: recurringActivity.is_paid || false,
+        price: recurringActivity.price
+          ? recurringActivity.price.toString()
+          : "",
+        regenerateInstances: true,
       });
-    } else {
-      const now = new Date();
-      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-
-      setFormData((prev) => ({
-        ...prev,
-        startDate: format(now, "yyyy-MM-dd"),
-        startTime: format(now, "HH:mm"),
-        endDate: format(now, "yyyy-MM-dd"),
-        endTime: format(oneHourLater, "HH:mm"),
-      }));
     }
-  }, [activity]);
+  }, [recurringActivity]);
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -63,29 +82,10 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
     }));
   };
 
+  // Validate form data
   const validateForm = () => {
     if (!formData.title.trim()) {
       toast.error("Le titre est requis");
-      return false;
-    }
-
-    if (!formData.startDate) {
-      toast.error("La date de début est requise");
-      return false;
-    }
-
-    if (!formData.startTime) {
-      toast.error("L'heure de début est requise");
-      return false;
-    }
-
-    if (!formData.endDate) {
-      toast.error("La date de fin est requise");
-      return false;
-    }
-
-    if (!formData.endTime) {
-      toast.error("L'heure de fin est requise");
       return false;
     }
 
@@ -94,18 +94,38 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
       return false;
     }
 
-    const startDateTime = new Date(
-      `${formData.startDate}T${formData.startTime}`
-    );
-    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-    if (endDateTime <= startDateTime) {
-      toast.error(
-        "La date/heure de fin doit être après la date/heure de début"
-      );
+    if (!formData.startTime) {
+      toast.error("L'heure de début est requise");
       return false;
     }
 
+    if (!formData.endTime) {
+      toast.error("L'heure de fin est requise");
+      return false;
+    }
+
+    if (!formData.startDate) {
+      toast.error("La date de début est requise");
+      return false;
+    }
+
+    // Check if start time is before end time
+    const startTime = formData.startTime.split(":");
+    const endTime = formData.endTime.split(":");
+    const startHour = parseInt(startTime[0], 10);
+    const startMinute = parseInt(startTime[1], 10);
+    const endHour = parseInt(endTime[0], 10);
+    const endMinute = parseInt(endTime[1], 10);
+
+    if (
+      startHour > endHour ||
+      (startHour === endHour && startMinute >= endMinute)
+    ) {
+      toast.error("L'heure de fin doit être après l'heure de début");
+      return false;
+    }
+
+    // Validate transport capacity if transport is available
     if (
       formData.transportAvailable &&
       (!formData.transportCapacity || parseInt(formData.transportCapacity) < 1)
@@ -114,6 +134,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
       return false;
     }
 
+    // Validate price if activity is paid
     if (
       formData.isPaid &&
       (!formData.price || parseFloat(formData.price) <= 0)
@@ -125,43 +146,29 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
     return true;
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (validateForm()) {
-      const startDateTime = new Date(
-        `${formData.startDate}T${formData.startTime}`
-      );
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-      const activityData = {
-        title: formData.title,
-        description: formData.description,
-        startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
-        location: formData.location,
-        type: formData.type,
-        maxParticipants: formData.maxParticipants
-          ? parseInt(formData.maxParticipants)
-          : null,
-        transportAvailable: formData.transportAvailable,
-        transportCapacity:
-          formData.transportAvailable && formData.transportCapacity
-            ? parseInt(formData.transportCapacity)
-            : 0,
-        isPaid: formData.isPaid,
-        price:
-          formData.isPaid && formData.price ? parseFloat(formData.price) : 0,
+      // Convert dayOfWeek to integer
+      const formattedData = {
+        ...formData,
+        dayOfWeek: parseInt(formData.dayOfWeek, 10),
       };
 
-      onSubmit(activityData);
+      onSubmit(formattedData);
     }
   };
 
   return (
     <div className={styles.formWrapper}>
       <div className={styles.formHeader}>
-        <h2>{activity ? "Modifier l'activité" : "Ajouter une activité"}</h2>
+        <h2>
+          {recurringActivity
+            ? "Modifier l'activité récurrente"
+            : "Ajouter une activité récurrente"}
+        </h2>
         <button
           className={styles.closeButton}
           onClick={onCancel}
@@ -184,25 +191,66 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             value={formData.title}
             onChange={handleChange}
             className={styles.input}
-            placeholder="Titre de l'activité"
+            placeholder="Titre de l'activité récurrente"
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="location" className={styles.label}>
+            Lieu *
+          </label>
+          <input
+            type="text"
+            id="location"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            className={styles.input}
+            placeholder="Adresse ou lieu de l'activité"
           />
         </div>
 
         <div className={styles.formGrid}>
           <div className={styles.formGroup}>
-            <label htmlFor="startDate" className={styles.label}>
-              Date de début *
+            <label htmlFor="dayOfWeek" className={styles.label}>
+              Jour de la semaine *
             </label>
-            <input
-              type="date"
-              id="startDate"
-              name="startDate"
-              value={formData.startDate}
+            <select
+              id="dayOfWeek"
+              name="dayOfWeek"
+              value={formData.dayOfWeek}
               onChange={handleChange}
-              className={styles.input}
-            />
+              className={styles.select}
+            >
+              {daysOfWeek.map((day) => (
+                <option key={day.value} value={day.value}>
+                  {day.label}
+                </option>
+              ))}
+            </select>
           </div>
 
+          <div className={styles.formGroup}>
+            <label htmlFor="recurrenceType" className={styles.label}>
+              Type de récurrence *
+            </label>
+            <select
+              id="recurrenceType"
+              name="recurrenceType"
+              value={formData.recurrenceType}
+              onChange={handleChange}
+              className={styles.select}
+            >
+              {recurrenceTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className={styles.formGrid}>
           <div className={styles.formGroup}>
             <label htmlFor="startTime" className={styles.label}>
               Heure de début *
@@ -212,22 +260,6 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               id="startTime"
               name="startTime"
               value={formData.startTime}
-              onChange={handleChange}
-              className={styles.input}
-            />
-          </div>
-        </div>
-
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label htmlFor="endDate" className={styles.label}>
-              Date de fin *
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              name="endDate"
-              value={formData.endDate}
               onChange={handleChange}
               className={styles.input}
             />
@@ -248,19 +280,35 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
           </div>
         </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="location" className={styles.label}>
-            Lieu *
-          </label>
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            className={styles.input}
-            placeholder="Adresse ou lieu de l'activité"
-          />
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label htmlFor="startDate" className={styles.label}>
+              Date de début *
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="endDate" className={styles.label}>
+              Date de fin (optionnel)
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              className={styles.input}
+              placeholder="Laissez vide pour une récurrence sans fin"
+            />
+          </div>
         </div>
 
         <div className={styles.formGrid}>
@@ -390,6 +438,31 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
           />
         </div>
 
+        {recurringActivity && (
+          <div className={styles.formGroup}>
+            <div className={styles.checkboxGroup}>
+              <input
+                type="checkbox"
+                id="regenerateInstances"
+                name="regenerateInstances"
+                checked={formData.regenerateInstances}
+                onChange={handleChange}
+                className={styles.checkbox}
+              />
+              <label
+                htmlFor="regenerateInstances"
+                className={styles.checkboxLabel}
+              >
+                Régénérer les instances futures
+              </label>
+              <p className={styles.helpText}>
+                Si activé, les instances futures de cette activité récurrente
+                seront régénérées selon les nouvelles informations.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className={styles.formFooter}>
           <button
             type="button"
@@ -399,7 +472,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             Annuler
           </button>
           <button type="submit" className={styles.submitButton}>
-            {activity ? "Mettre à jour" : "Ajouter"}
+            {recurringActivity ? "Mettre à jour" : "Ajouter"}
           </button>
         </div>
       </form>
@@ -407,4 +480,4 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
   );
 };
 
-export default ActivityForm;
+export default RecurringActivityForm;

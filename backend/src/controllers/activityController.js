@@ -109,10 +109,6 @@ exports.getActivityById = async (req, res) => {
   }
 };
 
-/**
- * Create a new activity
- * @route POST /api/activities
- */
 exports.createActivity = async (req, res) => {
   try {
     const {
@@ -125,8 +121,11 @@ exports.createActivity = async (req, res) => {
       maxParticipants,
       transportAvailable,
       transportCapacity,
+      isPaid,
+      price,
     } = req.body;
 
+    // Validate activity type
     if (!Object.values(activityTypes).includes(type)) {
       return res.status(400).json({
         status: "fail",
@@ -134,6 +133,7 @@ exports.createActivity = async (req, res) => {
       });
     }
 
+    // Create new activity
     const newActivity = await Activity.create({
       title,
       description,
@@ -143,10 +143,13 @@ exports.createActivity = async (req, res) => {
       type,
       maxParticipants: maxParticipants || null,
       transportAvailable: transportAvailable || false,
-      transportCapacity: transportCapacity || 0,
+      transportCapacity: transportAvailable ? transportCapacity || 0 : 0,
+      isPaid: isPaid || false,
+      price: isPaid ? price || 0 : 0,
       createdBy: req.user.id,
     });
 
+    // Send response
     res.status(201).json({
       status: "success",
       data: {
@@ -162,10 +165,8 @@ exports.createActivity = async (req, res) => {
   }
 };
 
-/**
- * Update activity
- * @route PATCH /api/activities/:id
- */
+// And update the updateActivity function
+
 exports.updateActivity = async (req, res) => {
   try {
     const { id } = req.params;
@@ -179,8 +180,11 @@ exports.updateActivity = async (req, res) => {
       maxParticipants,
       transportAvailable,
       transportCapacity,
+      isPaid,
+      price,
     } = req.body;
 
+    // Check if activity exists
     const existingActivity = await Activity.findById(id);
 
     if (!existingActivity) {
@@ -190,6 +194,7 @@ exports.updateActivity = async (req, res) => {
       });
     }
 
+    // Validate activity type if provided
     if (type && !Object.values(activityTypes).includes(type)) {
       return res.status(400).json({
         status: "fail",
@@ -197,6 +202,7 @@ exports.updateActivity = async (req, res) => {
       });
     }
 
+    // Update activity
     const updatedActivity = await Activity.update(id, {
       title,
       description,
@@ -207,8 +213,11 @@ exports.updateActivity = async (req, res) => {
       maxParticipants,
       transportAvailable,
       transportCapacity,
+      isPaid,
+      price,
     });
 
+    // Send response
     res.status(200).json({
       status: "success",
       data: {

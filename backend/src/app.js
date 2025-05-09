@@ -7,6 +7,7 @@ const { errorHandler } = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
+const recurringActivityRoutes = require("./routes/recurringActivityRoutes");
 
 const app = express();
 
@@ -36,6 +37,7 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/recurring-activities", recurringActivityRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

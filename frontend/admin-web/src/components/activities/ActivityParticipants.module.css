@@ -1,0 +1,288 @@
+.participantsContainer {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: var(--color-background-dark);
+  color: var(--color-text);
+}
+
+.content {
+  padding: 1.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.activityInfo {
+  margin-bottom: 2rem;
+}
+
+.activityInfo h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--font-size-lg);
+}
+
+.activityMeta {
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sectionHeader h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.addButton,
+.closeAddButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.addButton:hover {
+  background-color: var(--color-background-dark);
+}
+
+.addButton[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.participantsList,
+.addParticipantsSection {
+  background-color: var(--color-background);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.loading,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.emptyIcon {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.participantsGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.participantInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.participantName {
+  font-weight: 500;
+}
+
+.participantEmail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.transportButton {
+  padding: 0.4rem 0.75rem;
+  margin-right: 0.75rem;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.transportActive {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.removeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius);
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.removeButton:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger);
+}
+
+.addParticipantsSection {
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+}
+
+.searchBar {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+.adherentsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.adherentItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.adherentInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.adherentName {
+  font-weight: 500;
+}
+
+.adherentEmail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.addUserButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.addUserButton:hover {
+  background-color: var(--color-primary-dark);
+}
+
+@media (max-width: 768px) {
+  .participantItem,
+  .adherentItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .transportButton {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .participantInfo,
+  .adherentInfo {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .removeButton {
+    align-self: flex-end;
+  }
+
+  .addUserButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
