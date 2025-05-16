@@ -14,6 +14,8 @@ import Users from "./pages/users/Users";
 import Activities from "./pages/activities/Activities";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./routes";
+import AdherentRegistrationPage from "./pages/adherent/AdherentRegistrationPage";
+import MembershipRequestsPage from "./pages/membership/MembershipRequestsPage";
 import "./styles/global.css";
 import Planning from "./pages/planning/Planning";
 
@@ -35,10 +37,13 @@ function App() {
         />
 
         <Routes>
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/adherent/register" element={<AdherentRegistrationPage />} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+          {/* Protected routes */}
           <Route
             path="/"
             element={
@@ -51,6 +56,7 @@ function App() {
             <Route path="/users" element={<Users />} />
             <Route path="/activities" element={<Activities />} />
             <Route path="/planning" element={<Planning />} />
+            <Route path="/membership-requests" element={<MembershipRequestsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

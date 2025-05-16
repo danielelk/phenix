@@ -9,6 +9,7 @@ import {
   FiClipboard,
   FiSettings,
   FiLogOut,
+  FiUserPlus
 } from "react-icons/fi";
 
 const Sidebar = ({ collapsed }) => {
@@ -39,6 +40,12 @@ const Sidebar = ({ collapsed }) => {
       path: "/planning",
       icon: <FiClipboard size={20} />,
       roles: ["admin", "accompagnateur"],
+    },
+    {
+      title: "Demandes d'adhésion",
+      path: "/membership-requests",
+      icon: <FiUserPlus size={20} />,
+      roles: ["admin"],
     },
     {
       title: "Paramètres",
