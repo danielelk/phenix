@@ -9,9 +9,10 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const recurringActivityRoutes = require("./routes/recurringActivityRoutes");
-const formuleRoutes = require("./routes/formuleRoutes"); // Add this line
-const membershipRequestRoutes = require("./routes/membershipRequestRoutes"); // Add this line
-// Add any other route imports you might need here
+const formuleRoutes = require("./routes/formuleRoutes");
+const membershipRequestRoutes = require("./routes/membershipRequestRoutes");
+const { migrate } = require('node-pg-migrate');
+const path = require('path');
 
 const app = express();
 

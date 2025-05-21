@@ -25,10 +25,17 @@ class MembershipRequest {
         inscriptionLoisirs,
         autorisationImage,
         notes,
-        status = 'pending' // Default status
+        emergencyContactName,
+        emergencyContactPhone,
+        medicalNotes,
+        address,
+        city,
+        postalCode,
+        dateOfBirth,
+        billingEmail,
+        status = 'pending'
       } = requestData;
 
-      // Insert membership request into database
       const query = `
         INSERT INTO membership_requests (
           first_name, 
@@ -42,10 +49,19 @@ class MembershipRequest {
           inscription_sport,
           inscription_loisirs,
           autorisation_image,
+          emergency_contact_name,
+          emergency_contact_phone,
+          medical_notes,
+          address,
+          city,
+          postal_code,
+          birth_date,
+          billing_email,
           notes,
-          status
+          status,
+          registration_date
         ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) 
         RETURNING *
       `;
 
@@ -61,8 +77,17 @@ class MembershipRequest {
         inscriptionSport !== undefined ? inscriptionSport : false,
         inscriptionLoisirs !== undefined ? inscriptionLoisirs : false,
         autorisationImage !== undefined ? autorisationImage : false,
-        notes,
-        status
+        emergencyContactName,
+        emergencyContactPhone,
+        medicalNotes || null,
+        address || null,
+        city || null,
+        postalCode || null,
+        dateOfBirth,
+        billingEmail || email,
+        notes || null,
+        status,
+        new Date()
       ];
 
       const { rows } = await db.query(query, values);
@@ -172,6 +197,14 @@ class MembershipRequest {
         "inscription_sport",
         "inscription_loisirs",
         "autorisation_image",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "medical_notes",
+        "address",
+        "city",
+        "postal_code",
+        "birth_date",
+        "billing_email",
         "notes",
         "status"
       ];
@@ -238,4 +271,4 @@ class MembershipRequest {
   }
 }
 
-module.exports = MembershipRequest;
+module.exports = { MembershipRequest };

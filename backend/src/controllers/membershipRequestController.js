@@ -1,4 +1,4 @@
-const MembershipRequest = require("../models/MembershipRequest");
+const { MembershipRequest } = require("../models/MembershipRequest");
 const { User, userRoles } = require("../models/User");
 const logger = require("../utils/logger");
 
@@ -76,14 +76,28 @@ exports.createMembershipRequest = async (req, res) => {
       inscriptionLoisirs,
       autorisationImage,
       notes,
+      emergencyContactName,
+      emergencyContactPhone,
+      medicalNotes,
+      address,
+      city,
+      postalCode,
+      dateOfBirth,
+      billingEmail
     } = req.body;
 
-    // Vérifier si l'email existe déjà
     const existingRequest = await MembershipRequest.findByEmail(email);
     if (existingRequest && existingRequest.status === 'pending') {
       return res.status(400).json({
         status: "fail",
         message: "Une demande d'adhésion est déjà en cours de traitement avec cet email",
+      });
+    }
+
+    if (!dateOfBirth) {
+      return res.status(400).json({
+        status: "fail",
+        message: "La date de naissance est obligatoire",
       });
     }
 
@@ -100,6 +114,14 @@ exports.createMembershipRequest = async (req, res) => {
       inscriptionLoisirs,
       autorisationImage,
       notes,
+      emergencyContactName,
+      emergencyContactPhone,
+      medicalNotes,
+      address,
+      city,
+      postalCode,
+      dateOfBirth,
+      billingEmail,
       status: "pending",
     });
 
@@ -138,7 +160,15 @@ exports.updateMembershipRequest = async (req, res) => {
       inscriptionLoisirs,
       autorisationImage,
       notes,
+      emergencyContactName,
+      emergencyContactPhone,
+      medicalNotes,
       status,
+      address,
+      city,
+      postalCode,
+      dateOfBirth,
+      billingEmail
     } = req.body;
 
     const updatedMembershipRequest = await MembershipRequest.update(id, {
@@ -154,7 +184,15 @@ exports.updateMembershipRequest = async (req, res) => {
       inscriptionLoisirs,
       autorisationImage,
       notes,
+      emergencyContactName,
+      emergencyContactPhone,
+      medicalNotes,
       status,
+      address,
+      city,
+      postalCode,
+      dateOfBirth,
+      billingEmail
     });
 
     res.status(200).json({

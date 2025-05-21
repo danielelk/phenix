@@ -13,7 +13,7 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     lastName: "",
     email: "",
     phone: "",
-    genre: "masculin", // Valeur par défaut
+    genre: "masculin",
     nationalite: "",
     formuleId: "",
     estBenevole: false,
@@ -27,9 +27,9 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     city: "",
     postalCode: "",
     dateOfBirth: "",
+    billingEmail: ""
   });
 
-  // Chargement des formules disponibles
   useEffect(() => {
     const fetchFormules = async () => {
       try {
@@ -44,12 +44,10 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     fetchFormules();
   }, []);
 
-  // Gestion des changements dans le formulaire
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === "checkbox" ? checked : value;
 
-    // Si on coche la case bénévole, on réinitialise les choix sport/loisirs
     if (name === "estBenevole" && checked) {
       setFormData(prev => ({
         ...prev,
@@ -57,6 +55,12 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
         inscriptionSport: false,
         inscriptionLoisirs: false,
         formuleId: ""
+      }));
+    } else if (name === "email" && !formData.billingEmail) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue,
+        billingEmail: newValue
       }));
     } else {
       setFormData(prev => ({
@@ -66,7 +70,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     }
   };
 
-  // Validation du formulaire
   const validateForm = () => {
     const requiredFields = [
       "firstName", 
@@ -74,17 +77,16 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
       "email", 
       "phone", 
       "genre", 
-      "nationalite"
+      "nationalite",
+      "dateOfBirth"
     ];
 
-    // Ajout des champs obligatoires pour les adhérents (non bénévoles)
     if (!formData.estBenevole) {
       requiredFields.push("formuleId");
       requiredFields.push("emergencyContactName");
       requiredFields.push("emergencyContactPhone");
     }
 
-    // Vérification des champs requis
     for (const field of requiredFields) {
       if (!formData[field]) {
         toast.error(`Le champ ${getFieldLabel(field)} est requis`);
@@ -92,20 +94,22 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
       }
     }
 
-    // Validation de l'email
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
       toast.error("L'adresse email n'est pas valide");
       return false;
     }
 
-    // Validation du numéro de téléphone (format français)
+    if (formData.billingEmail && !/\S+@\S+\.\S+/.test(formData.billingEmail)) {
+      toast.error("L'adresse email de facturation n'est pas valide");
+      return false;
+    }
+
     const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
     if (!phoneRegex.test(formData.phone)) {
       toast.error("Le numéro de téléphone n'est pas valide");
       return false;
     }
 
-    // Validation pour les adhérents non bénévoles
     if (!formData.estBenevole) {
       if (!formData.inscriptionSport && !formData.inscriptionLoisirs) {
         toast.error("Veuillez sélectionner au moins une option: Sport ou Loisirs");
@@ -116,7 +120,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     return true;
   };
 
-  // Conversion du nom de champ en libellé pour les messages d'erreur
   const getFieldLabel = (field) => {
     const fieldLabels = {
       firstName: "Prénom",
@@ -127,12 +130,13 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
       nationalite: "Nationalité",
       formuleId: "Formule d'adhésion",
       emergencyContactName: "Contact d'urgence",
-      emergencyContactPhone: "Téléphone d'urgence"
+      emergencyContactPhone: "Téléphone d'urgence",
+      dateOfBirth: "Date de naissance",
+      billingEmail: "Email de facturation"
     };
     return fieldLabels[field] || field;
   };
 
-  // Soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -147,7 +151,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
       
       toast.success("Demande d'adhésion envoyée avec succès");
       
-      // Vérifier si onSubmit existe et est une fonction avant de l'appeler
       if (typeof onSubmit === 'function') {
         onSubmit(result);
       }
@@ -182,7 +185,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
           </p>
         </div>
 
-        {/* Type de membre */}
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Type d'inscription</h3>
           
@@ -236,7 +238,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
           )}
         </div>
 
-        {/* Informations personnelles */}
         <div className={styles.formSection}>
           <h3 className={styles.sectionTitle}>Informations personnelles</h3>
           
@@ -289,6 +290,23 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div className={styles.formGroup}>
+              <label htmlFor="billingEmail" className={styles.label}>
+                Email de facturation
+              </label>
+              <input
+                type="email"
+                id="billingEmail"
+                name="billingEmail"
+                value={formData.billingEmail}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="Si différent de l'email principal"
+              />
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
               <label htmlFor="phone" className={styles.label}>
                 Téléphone *
               </label>
@@ -300,6 +318,21 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
                 onChange={handleChange}
                 className={styles.input}
                 placeholder="0612345678"
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="dateOfBirth" className={styles.label}>
+                Date de naissance *
+              </label>
+              <input
+                type="date"
+                id="dateOfBirth"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                className={styles.input}
                 required
               />
             </div>
@@ -341,20 +374,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
 
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
-              <label htmlFor="dateOfBirth" className={styles.label}>
-                Date de naissance
-              </label>
-              <input
-                type="date"
-                id="dateOfBirth"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className={styles.input}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
               <label htmlFor="address" className={styles.label}>
                 Adresse
               </label>
@@ -367,9 +386,7 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
                 className={styles.input}
               />
             </div>
-          </div>
 
-          <div className={styles.formGrid}>
             <div className={styles.formGroup}>
               <label htmlFor="city" className={styles.label}>
                 Ville
@@ -383,24 +400,23 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
                 className={styles.input}
               />
             </div>
+          </div>
 
-            <div className={styles.formGroup}>
-              <label htmlFor="postalCode" className={styles.label}>
-                Code Postal
-              </label>
-              <input
-                type="text"
-                id="postalCode"
-                name="postalCode"
-                value={formData.postalCode}
-                onChange={handleChange}
-                className={styles.input}
-              />
-            </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="postalCode" className={styles.label}>
+              Code Postal
+            </label>
+            <input
+              type="text"
+              id="postalCode"
+              name="postalCode"
+              value={formData.postalCode}
+              onChange={handleChange}
+              className={styles.input}
+            />
           </div>
         </div>
 
-        {/* Formule d'adhésion - seulement pour les adhérents */}
         {!formData.estBenevole && (
           <div className={styles.formSection}>
             <h3 className={styles.sectionTitle}>Formule d'adhésion</h3>
@@ -434,7 +450,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
           </div>
         )}
 
-        {/* Informations d'urgence - seulement pour les adhérents */}
         {!formData.estBenevole && (
           <div className={styles.formSection}>
             <h3 className={styles.sectionTitle}>Informations d'urgence</h3>
@@ -489,7 +504,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
           </div>
         )}
 
-        {/* Autorisation d'utilisation d'image */}
         <div className={styles.formSection}>
           <div className={styles.checkboxGroup}>
             <input
