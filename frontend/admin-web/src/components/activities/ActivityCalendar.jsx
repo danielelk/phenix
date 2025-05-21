@@ -19,6 +19,7 @@ import {
   FiUsers,
   FiClock,
   FiMapPin,
+  FiBriefcase,
 } from "react-icons/fi";
 import { MdOutlineEuroSymbol } from "react-icons/md";
 import ActivityParticipants from "./ActivityParticipants";
@@ -67,13 +68,23 @@ const ActivityCalendar = ({
     );
   };
 
+  // Get CSS class based on activity type
+  const getActivityTypeClass = (activityType) => {
+    switch(activityType) {
+      case "with_adherents":
+        return styles.withAdherentsActivity;
+      case "without_adherents":
+        return styles.withoutAdherentsActivity;
+      case "br":
+        return styles.brActivity;
+      default:
+        return styles.withoutAdherentsActivity;
+    }
+  };
+
   // Render activity item
   const renderActivity = (activity) => {
-    // Determine the activity type class
-    const typeClass =
-      activity.type === "with_adherents"
-        ? styles.withAdherentsActivity
-        : styles.withoutAdherentsActivity;
+    const typeClass = getActivityTypeClass(activity.type);
 
     return (
       <div
@@ -100,6 +111,20 @@ const ActivityCalendar = ({
   const handleParticipantsChanged = () => {
     if (onParticipantsChanged) {
       onParticipantsChanged();
+    }
+  };
+
+  // Get display text for activity type
+  const getActivityTypeText = (type) => {
+    switch(type) {
+      case "with_adherents":
+        return "Avec adhérents";
+      case "without_adherents":
+        return "Sans adhérents";
+      case "br":
+        return "Bureau Restreint";
+      default:
+        return type;
     }
   };
 
@@ -155,12 +180,9 @@ const ActivityCalendar = ({
           </div>
 
           <div className={styles.detailItem}>
-            <FiUsers className={styles.detailIcon} />
+            <FiBriefcase className={styles.detailIcon} />
             <div>
-              <strong>Type:</strong>{" "}
-              {selectedActivity.type === "with_adherents"
-                ? "Avec adhérents"
-                : "Sans adhérents"}
+              <strong>Type:</strong> {getActivityTypeText(selectedActivity.type)}
               {selectedActivity.type === "with_adherents" && (
                 <div>
                   <strong>Participants:</strong>{" "}
@@ -292,6 +314,12 @@ const ActivityCalendar = ({
             className={`${styles.legendColor} ${styles.withoutAdherentsColor}`}
           ></span>
           <span>Sans adhérents</span>
+        </div>
+        <div className={styles.legendItem}>
+          <span
+            className={`${styles.legendColor} ${styles.brColor}`}
+          ></span>
+          <span>Bureau Restreint</span>
         </div>
       </div>
 

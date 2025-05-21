@@ -277,6 +277,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             >
               <option value="with_adherents">Avec adhérents</option>
               <option value="without_adherents">Sans adhérents</option>
+              <option value="br">Bureau Restreint</option>
             </select>
           </div>
 

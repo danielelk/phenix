@@ -9,7 +9,7 @@ import ActivityForm from "../../components/activities/ActivityForm";
 const Activities = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("calendar"); // 'calendar' or 'list'
+  const [view, setView] = useState("calendar"); // 'calendar' ou 'list'
   const [showForm, setShowForm] = useState(false);
   const [currentActivity, setCurrentActivity] = useState(null);
   const [filterType, setFilterType] = useState("all");
@@ -143,6 +143,7 @@ const Activities = () => {
               <option value="all">Tous les types</option>
               <option value="with_adherents">Avec adhérents</option>
               <option value="without_adherents">Sans adhérents</option>
+              <option value="br">Bureau Restreint</option>
             </select>
           </div>
 

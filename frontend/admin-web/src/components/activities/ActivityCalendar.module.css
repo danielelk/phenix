@@ -79,6 +79,10 @@
   background-color: var(--color-secondary);
 }
 
+.brColor {
+  background-color: var(--color-info);
+}
+
 .calendarWrapper {
   position: relative;
   min-height: 600px;
@@ -163,6 +167,11 @@
   color: white;
 }
 
+.brActivity {
+  background-color: var(--color-info);
+  color: white;
+}
+
 .activityTime {
   margin-right: 0.5rem;
   font-weight: 600;
@@ -215,6 +224,7 @@
   flex-direction: column;
   gap: 0.5rem;
   align-items: flex-start;
+  margin-top: 1rem;
 }
 
 .editButton,

@@ -1,0 +1,274 @@
+.formuleListPage {
+  padding: 1rem 0;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.pageHeader h2 {
+  margin: 0;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formuleList {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.formulesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.formulesTable th,
+.formulesTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.formulesTable th {
+  font-weight: 600;
+  background-color: var(--color-background-dark);
+}
+
+.formulesTable tr:last-child td {
+  border-bottom: none;
+}
+
+.formulesTable tr:hover td {
+  background-color: rgba(245, 166, 35, 0.05);
+}
+
+.titleCell {
+  font-weight: 600;
+  min-width: 150px;
+}
+
+.descriptionCell {
+  min-width: 300px;
+}
+
+.priceCell {
+  text-align: right;
+  min-width: 100px;
+}
+
+.statusCell {
+  min-width: 100px;
+}
+
+.actionsCell {
+  white-space: nowrap;
+  text-align: right;
+  min-width: 150px;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.actionButton:hover {
+  background-color: var(--color-background-dark);
+  color: var(--color-text);
+}
+
+.deleteButton {
+  color: var(--color-danger);
+}
+
+.deleteButton:hover {
+  color: var(--color-danger);
+}
+
+.activeIcon {
+  color: var(--color-success);
+}
+
+.inactiveIcon {
+  color: var(--color-text-muted);
+}
+
+.activeStatus {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--color-success);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.inactiveStatus {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(153, 153, 153, 0.1);
+  color: var(--color-text-muted);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.inactiveRow {
+  opacity: 0.7;
+}
+
+.noData {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  color: var(--color-text-muted);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.emptyState p {
+  margin-bottom: 1.5rem;
+  color: var(--color-text-muted);
+}
+
+.emptyAddButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formOverlay,
+.confirmOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.formContainer {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.confirmDialog {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.confirmDialog h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.confirmWarning {
+  color: var(--color-danger);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.confirmButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.cancelButton,
+.confirmButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.cancelButton {
+  background-color: var(--color-background-dark);
+  color: var(--color-text);
+}
+
+.confirmButton {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .addButton {
+    width: 100%;
+  }
+  
+  .formulesTable {
+    font-size: var(--font-size-sm);
+  }
+  
+  .formulesTable th,
+  .formulesTable td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .formContainer {
+    max-width: 95%;
+  }
+  
+  .confirmDialog {
+    max-width: 95%;
+    padding: 1.5rem;
+  }
+}

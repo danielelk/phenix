@@ -1,418 +1,354 @@
 import React, { useState, useEffect } from "react";
 import styles from "./AdherentRegistrationForm.module.css";
-import { FiUser, FiMail, FiPhone, FiSave, FiAlertTriangle, FiCheck } from "react-icons/fi";
+import { FiX, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { format } from "date-fns";
-import api from "../../services/api";
+import membershipService from "../../services/membership";
+import formulesService from "../../services/formules";
 
-const AdherentRegistrationForm = () => {
+const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
   const [formules, setFormules] = useState([]);
-  const [loadingFormules, setLoadingFormules] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    birthDate: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    medicalNotes: "",
-    genre: "",
+    genre: "masculin", // Valeur par défaut
     nationalite: "",
     formuleId: "",
     estBenevole: false,
     inscriptionSport: false,
     inscriptionLoisirs: false,
     autorisationImage: false,
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    medicalNotes: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    dateOfBirth: "",
   });
-  
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
 
-  // Charger les formules disponibles
+  // Chargement des formules disponibles
   useEffect(() => {
     const fetchFormules = async () => {
       try {
-        const response = await api.get("/formules/public");
-        setFormules(response.data.formules || []);
+        const response = await formulesService.getFormules();
+        setFormules(response.data.formules.filter(formule => formule.est_actif));
       } catch (error) {
         console.error("Erreur lors du chargement des formules:", error);
-        // Formules par défaut en cas d'erreur
-        setFormules([
-          {
-            id: 1,
-            titre: "Formule Standard",
-            description: "Accès aux activités régulières de l'association",
-            prix: 150.00,
-          },
-          {
-            id: 2,
-            titre: "Formule Loisirs",
-            description: "Accès aux sorties loisirs et événements spéciaux",
-            prix: 100.00,
-          },
-          {
-            id: 3,
-            titre: "Formule Complète",
-            description: "Accès à toutes les activités (sport et loisirs)",
-            prix: 200.00,
-          }
-        ]);
-      } finally {
-        setLoadingFormules(false);
+        toast.error("Erreur lors du chargement des formules");
       }
     };
 
     fetchFormules();
   }, []);
 
-  // Handle input changes
+  // Gestion des changements dans le formulaire
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => {
-      // Si on passe à bénévole, réinitialiser certains champs
-      if (name === "estBenevole" && checked) {
-        return {
-          ...prev,
-          [name]: checked,
-          formuleId: "",
-          emergencyContactName: "",
-          emergencyContactPhone: "",
-        };
-      }
-      // Pour tous les autres champs
-      return {
+    const newValue = type === "checkbox" ? checked : value;
+
+    // Si on coche la case bénévole, on réinitialise les choix sport/loisirs
+    if (name === "estBenevole" && checked) {
+      setFormData(prev => ({
         ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      };
-    });
-    
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+        [name]: newValue,
+        inscriptionSport: false,
+        inscriptionLoisirs: false,
+        formuleId: ""
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue
+      }));
     }
   };
 
-  // Validate form data
+  // Validation du formulaire
   const validateForm = () => {
-    const newErrors = {};
+    const requiredFields = [
+      "firstName", 
+      "lastName", 
+      "email", 
+      "phone", 
+      "genre", 
+      "nationalite"
+    ];
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "Le prénom est requis";
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Le nom est requis";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "L'email n'est pas valide";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Le téléphone est requis";
-    }
-
-    if (!formData.genre) {
-      newErrors.genre = "Le genre est requis";
-    }
-
-    if (!formData.nationalite.trim()) {
-      newErrors.nationalite = "La nationalité est requise";
-    }
-
-    // Validation spécifique pour les adhérents (non bénévoles)
+    // Ajout des champs obligatoires pour les adhérents (non bénévoles)
     if (!formData.estBenevole) {
-      if (!formData.emergencyContactName.trim()) {
-        newErrors.emergencyContactName = "Le contact d'urgence est requis";
-      }
-  
-      if (!formData.emergencyContactPhone.trim()) {
-        newErrors.emergencyContactPhone = "Le téléphone du contact d'urgence est requis";
-      }
+      requiredFields.push("formuleId");
+      requiredFields.push("emergencyContactName");
+      requiredFields.push("emergencyContactPhone");
+    }
 
-      if (!formData.formuleId) {
-        newErrors.formuleId = "Veuillez sélectionner une formule";
-      }
-      
-      if (!formData.inscriptionSport && !formData.inscriptionLoisirs) {
-        newErrors.inscriptionSport = "Veuillez sélectionner au moins une option";
-        newErrors.inscriptionLoisirs = "Veuillez sélectionner au moins une option";
+    // Vérification des champs requis
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        toast.error(`Le champ ${getFieldLabel(field)} est requis`);
+        return false;
       }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Validation de l'email
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      toast.error("L'adresse email n'est pas valide");
+      return false;
+    }
+
+    // Validation du numéro de téléphone (format français)
+    const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      toast.error("Le numéro de téléphone n'est pas valide");
+      return false;
+    }
+
+    // Validation pour les adhérents non bénévoles
+    if (!formData.estBenevole) {
+      if (!formData.inscriptionSport && !formData.inscriptionLoisirs) {
+        toast.error("Veuillez sélectionner au moins une option: Sport ou Loisirs");
+        return false;
+      }
+    }
+
+    return true;
   };
 
-  // Handle form submission
+  // Conversion du nom de champ en libellé pour les messages d'erreur
+  const getFieldLabel = (field) => {
+    const fieldLabels = {
+      firstName: "Prénom",
+      lastName: "Nom",
+      email: "Email",
+      phone: "Téléphone",
+      genre: "Genre",
+      nationalite: "Nationalité",
+      formuleId: "Formule d'adhésion",
+      emergencyContactName: "Contact d'urgence",
+      emergencyContactPhone: "Téléphone d'urgence"
+    };
+    return fieldLabels[field] || field;
+  };
+
+  // Soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      // Scroll to first error
-      const firstError = document.querySelector(`.${styles.error}`);
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
       return;
     }
 
-    setIsSubmitting(true);
+    setLoading(true);
 
     try {
-      // Format the data for the API
-      const membershipData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        birthDate: formData.birthDate || null,
-        address: formData.address,
-        city: formData.city,
-        postalCode: formData.postalCode,
-        emergencyContactName: formData.estBenevole ? null : formData.emergencyContactName,
-        emergencyContactPhone: formData.estBenevole ? null : formData.emergencyContactPhone,
-        medicalNotes: formData.medicalNotes,
-        genre: formData.genre,
-        nationalite: formData.nationalite,
-        formuleId: formData.estBenevole ? null : formData.formuleId,
-        estBenevole: formData.estBenevole,
-        inscriptionSport: formData.inscriptionSport,
-        inscriptionLoisirs: formData.inscriptionLoisirs,
-        autorisationImage: formData.autorisationImage,
-        registrationDate: format(new Date(), "yyyy-MM-dd"),
-      };
-
-      // Submit the form without authorization token (public endpoint)
-      await api.post("/public/membership-requests", membershipData);
-
-      // Clear form after successful submission
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        birthDate: "",
-        address: "",
-        city: "",
-        postalCode: "",
-        emergencyContactName: "",
-        emergencyContactPhone: "",
-        medicalNotes: "",
-        genre: "",
-        nationalite: "",
-        formuleId: "",
-        estBenevole: false,
-        inscriptionSport: false,
-        inscriptionLoisirs: false,
-        autorisationImage: false,
-      });
-
-      setSuccessMessage(
-        formData.estBenevole 
-          ? "Votre demande de bénévolat a été envoyée avec succès. Nous vous contacterons prochainement."
-          : "Votre demande d'adhésion a été envoyée avec succès. Nous vous contacterons prochainement."
-      );
-      toast.success("Demande envoyée avec succès");
+      const result = await membershipService.createMembershipRequest(formData);
+      
+      toast.success("Demande d'adhésion envoyée avec succès");
+      
+      // Vérifier si onSubmit existe et est une fonction avant de l'appeler
+      if (typeof onSubmit === 'function') {
+        onSubmit(result);
+      }
     } catch (error) {
-      console.error("Error submitting request:", error);
-      toast.error(error.response?.data?.message || "Erreur lors de l'envoi de la demande");
+      console.error("Erreur lors de l'envoi de la demande d'adhésion:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'envoi de la demande d'adhésion");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  // Get formule info
-  const getFormuleInfo = (id) => {
-    const formule = formules.find(f => f.id === parseInt(id));
-    return formule || null;
-  };
-
   return (
-    <div className={styles.formContainer}>
+    <div className={styles.formWrapper}>
       <div className={styles.formHeader}>
-        <img src="/logo.svg" alt="Association Phénix" className={styles.logo} />
-        <h1 className={styles.title}>Association Phénix</h1>
-        <h2 className={styles.subtitle}>Demande d'adhésion</h2>
+        <h2>Demande d'adhésion</h2>
+        <button
+          className={styles.closeButton}
+          onClick={onCancel}
+          type="button"
+          aria-label="Fermer"
+        >
+          <FiX size={24} />
+        </button>
       </div>
 
-      {successMessage ? (
-        <div className={styles.successContainer}>
-          <div className={styles.successIcon}>✓</div>
-          <h3 className={styles.successTitle}>Demande envoyée !</h3>
-          <p className={styles.successMessage}>{successMessage}</p>
-          <button 
-            className={styles.newRequestButton}
-            onClick={() => setSuccessMessage("")}
-          >
-            Faire une nouvelle demande
-          </button>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <div className={styles.statusInfo}>
+          <FiAlertCircle size={20} />
+          <p>
+            Cette demande sera soumise à l'administration de l'association pour validation.
+            Vous recevrez une confirmation par email.
+          </p>
         </div>
-      ) : (
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.benevoleSwitch}>
-            <div className={styles.checkboxGroup}>
-              <input
-                type="checkbox"
-                id="estBenevole"
-                name="estBenevole"
-                checked={formData.estBenevole}
-                onChange={handleChange}
-                className={styles.checkbox}
-              />
-              <label htmlFor="estBenevole" className={styles.checkboxLabel}>
-                Je souhaite devenir bénévole (et non adhérent)
-              </label>
-            </div>
-          </div>
+
+        {/* Type de membre */}
+        <div className={styles.formSection}>
+          <h3 className={styles.sectionTitle}>Type d'inscription</h3>
           
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Informations personnelles</h3>
-            
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label htmlFor="firstName" className={styles.label}>
-                  Prénom *
-                </label>
-                <div className={styles.inputWithIcon}>
-                  <FiUser className={styles.inputIcon} />
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.firstName ? styles.inputError : ""}`}
-                    placeholder="Votre prénom"
-                  />
-                </div>
-                {errors.firstName && (
-                  <p className={styles.error}>{errors.firstName}</p>
-                )}
-              </div>
+          <div className={styles.checkboxGroup}>
+            <input
+              type="checkbox"
+              id="estBenevole"
+              name="estBenevole"
+              checked={formData.estBenevole}
+              onChange={handleChange}
+              className={styles.checkbox}
+            />
+            <label htmlFor="estBenevole" className={styles.checkboxLabel}>
+              Je souhaite devenir bénévole
+            </label>
+          </div>
 
-              <div className={styles.formGroup}>
-                <label htmlFor="lastName" className={styles.label}>
-                  Nom *
-                </label>
-                <div className={styles.inputWithIcon}>
-                  <FiUser className={styles.inputIcon} />
+          {!formData.estBenevole && (
+            <div className={styles.formOptionGroup}>
+              <p className={styles.optionLabel}>Je souhaite m'inscrire aux activités :</p>
+              <div className={styles.optionSelections}>
+                <div className={styles.checkboxGroup}>
                   <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
+                    type="checkbox"
+                    id="inscriptionSport"
+                    name="inscriptionSport"
+                    checked={formData.inscriptionSport}
                     onChange={handleChange}
-                    className={`${styles.input} ${errors.lastName ? styles.inputError : ""}`}
-                    placeholder="Votre nom"
+                    className={styles.checkbox}
                   />
+                  <label htmlFor="inscriptionSport" className={styles.checkboxLabel}>
+                    Sport
+                  </label>
                 </div>
-                {errors.lastName && (
-                  <p className={styles.error}>{errors.lastName}</p>
-                )}
+                
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="inscriptionLoisirs"
+                    name="inscriptionLoisirs"
+                    checked={formData.inscriptionLoisirs}
+                    onChange={handleChange}
+                    className={styles.checkbox}
+                  />
+                  <label htmlFor="inscriptionLoisirs" className={styles.checkboxLabel}>
+                    Loisirs
+                  </label>
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label htmlFor="email" className={styles.label}>
-                  Email *
-                </label>
-                <div className={styles.inputWithIcon}>
-                  <FiMail className={styles.inputIcon} />
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.email ? styles.inputError : ""}`}
-                    placeholder="Votre adresse email"
-                  />
-                </div>
-                {errors.email && (
-                  <p className={styles.error}>{errors.email}</p>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="phone" className={styles.label}>
-                  Téléphone *
-                </label>
-                <div className={styles.inputWithIcon}>
-                  <FiPhone className={styles.inputIcon} />
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.phone ? styles.inputError : ""}`}
-                    placeholder="Votre numéro de téléphone"
-                  />
-                </div>
-                {errors.phone && (
-                  <p className={styles.error}>{errors.phone}</p>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label htmlFor="genre" className={styles.label}>
-                  Genre *
-                </label>
-                <select
-                  id="genre"
-                  name="genre"
-                  value={formData.genre}
-                  onChange={handleChange}
-                  className={`${styles.select} ${errors.genre ? styles.inputError : ""}`}
-                >
-                  <option value="">Sélectionnez</option>
-                  <option value="masculin">Masculin</option>
-                  <option value="feminin">Féminin</option>
-                </select>
-                {errors.genre && (
-                  <p className={styles.error}>{errors.genre}</p>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="nationalite" className={styles.label}>
-                  Nationalité *
-                </label>
-                <input
-                  type="text"
-                  id="nationalite"
-                  name="nationalite"
-                  value={formData.nationalite}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.nationalite ? styles.inputError : ""}`}
-                  placeholder="Votre nationalité"
-                />
-                {errors.nationalite && (
-                  <p className={styles.error}>{errors.nationalite}</p>
-                )}
-              </div>
+        {/* Informations personnelles */}
+        <div className={styles.formSection}>
+          <h3 className={styles.sectionTitle}>Informations personnelles</h3>
+          
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="firstName" className={styles.label}>
+                Prénom *
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="birthDate" className={styles.label}>
+              <label htmlFor="lastName" className={styles.label}>
+                Nom *
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="email" className={styles.label}>
+                Email *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="phone" className={styles.label}>
+                Téléphone *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="0612345678"
+                required
+              />
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="genre" className={styles.label}>
+                Genre *
+              </label>
+              <select
+                id="genre"
+                name="genre"
+                value={formData.genre}
+                onChange={handleChange}
+                className={styles.select}
+                required
+              >
+                <option value="masculin">Masculin</option>
+                <option value="feminin">Féminin</option>
+              </select>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="nationalite" className={styles.label}>
+                Nationalité *
+              </label>
+              <input
+                type="text"
+                id="nationalite"
+                name="nationalite"
+                value={formData.nationalite}
+                onChange={handleChange}
+                className={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="dateOfBirth" className={styles.label}>
                 Date de naissance
               </label>
               <input
                 type="date"
-                id="birthDate"
-                name="birthDate"
-                value={formData.birthDate}
+                id="dateOfBirth"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
                 onChange={handleChange}
                 className={styles.input}
               />
@@ -429,232 +365,165 @@ const AdherentRegistrationForm = () => {
                 value={formData.address}
                 onChange={handleChange}
                 className={styles.input}
-                placeholder="Votre adresse"
+              />
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="city" className={styles.label}>
+                Ville
+              </label>
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className={styles.input}
               />
             </div>
 
+            <div className={styles.formGroup}>
+              <label htmlFor="postalCode" className={styles.label}>
+                Code Postal
+              </label>
+              <input
+                type="text"
+                id="postalCode"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleChange}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Formule d'adhésion - seulement pour les adhérents */}
+        {!formData.estBenevole && (
+          <div className={styles.formSection}>
+            <h3 className={styles.sectionTitle}>Formule d'adhésion</h3>
+            
+            <div className={styles.formGroup}>
+              <label htmlFor="formuleId" className={styles.label}>
+                Sélectionnez une formule *
+              </label>
+              <select
+                id="formuleId"
+                name="formuleId"
+                value={formData.formuleId}
+                onChange={handleChange}
+                className={styles.select}
+                required={!formData.estBenevole}
+              >
+                <option value="">Sélectionner une formule</option>
+                {formules.map(formule => (
+                  <option key={formule.id} value={formule.id}>
+                    {formule.titre} - {formule.prix}€
+                  </option>
+                ))}
+              </select>
+              
+              {formData.formuleId && formules.length > 0 && (
+                <div className={styles.formuleDescription}>
+                  {formules.find(f => f.id.toString() === formData.formuleId.toString())?.description}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Informations d'urgence - seulement pour les adhérents */}
+        {!formData.estBenevole && (
+          <div className={styles.formSection}>
+            <h3 className={styles.sectionTitle}>Informations d'urgence</h3>
+            
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
-                <label htmlFor="city" className={styles.label}>
-                  Ville
+                <label htmlFor="emergencyContactName" className={styles.label}>
+                  Personne à contacter en cas d'urgence *
                 </label>
                 <input
                   type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
+                  id="emergencyContactName"
+                  name="emergencyContactName"
+                  value={formData.emergencyContactName}
                   onChange={handleChange}
                   className={styles.input}
-                  placeholder="Votre ville"
+                  required={!formData.estBenevole}
                 />
               </div>
 
               <div className={styles.formGroup}>
-                <label htmlFor="postalCode" className={styles.label}>
-                  Code postal
+                <label htmlFor="emergencyContactPhone" className={styles.label}>
+                  Téléphone d'urgence *
                 </label>
                 <input
-                  type="text"
-                  id="postalCode"
-                  name="postalCode"
-                  value={formData.postalCode}
+                  type="tel"
+                  id="emergencyContactPhone"
+                  name="emergencyContactPhone"
+                  value={formData.emergencyContactPhone}
                   onChange={handleChange}
                   className={styles.input}
-                  placeholder="Votre code postal"
+                  placeholder="0612345678"
+                  required={!formData.estBenevole}
                 />
               </div>
             </div>
-          </div>
-
-          {!formData.estBenevole && (
-            <div className={styles.formSection}>
-              <h3 className={styles.sectionTitle}>Informations d'urgence</h3>
-              
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="emergencyContactName" className={styles.label}>
-                    Personne à contacter en cas d'urgence *
-                  </label>
-                  <input
-                    type="text"
-                    id="emergencyContactName"
-                    name="emergencyContactName"
-                    value={formData.emergencyContactName}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.emergencyContactName ? styles.inputError : ""}`}
-                    placeholder="Nom et prénom"
-                  />
-                  {errors.emergencyContactName && (
-                    <p className={styles.error}>{errors.emergencyContactName}</p>
-                  )}
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="emergencyContactPhone" className={styles.label}>
-                    Téléphone d'urgence *
-                  </label>
-                  <input
-                    type="tel"
-                    id="emergencyContactPhone"
-                    name="emergencyContactPhone"
-                    value={formData.emergencyContactPhone}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.emergencyContactPhone ? styles.inputError : ""}`}
-                    placeholder="Numéro de téléphone"
-                  />
-                  {errors.emergencyContactPhone && (
-                    <p className={styles.error}>{errors.emergencyContactPhone}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="medicalNotes" className={styles.label}>
-                  Informations médicales importantes
-                </label>
-                <textarea
-                  id="medicalNotes"
-                  name="medicalNotes"
-                  value={formData.medicalNotes}
-                  onChange={handleChange}
-                  className={styles.textarea}
-                  placeholder="Allergies, traitements médicaux, etc."
-                  rows="3"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>
-              {formData.estBenevole ? "Informations de bénévolat" : "Informations d'adhésion"}
-            </h3>
-            
-            {!formData.estBenevole && (
-              <>
-                <div className={styles.formGroup}>
-                  <label htmlFor="formuleId" className={styles.label}>
-                    Formule d'adhésion *
-                  </label>
-                  <select
-                    id="formuleId"
-                    name="formuleId"
-                    value={formData.formuleId}
-                    onChange={handleChange}
-                    className={`${styles.select} ${errors.formuleId ? styles.inputError : ""}`}
-                    disabled={loadingFormules}
-                  >
-                    <option value="">Sélectionnez une formule</option>
-                    {formules.map((formule) => (
-                      <option key={formule.id} value={formule.id}>
-                        {formule.titre} - {formule.prix}€
-                      </option>
-                    ))}
-                  </select>
-                  {errors.formuleId && (
-                    <p className={styles.error}>{errors.formuleId}</p>
-                  )}
-                  
-                  {formData.formuleId && (
-                    <div className={styles.formuleDetail}>
-                      {getFormuleInfo(formData.formuleId)?.description}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Je m'inscris pour... *
+              <label htmlFor="medicalNotes" className={styles.label}>
+                Informations médicales importantes
               </label>
-              <div className={styles.checkboxGroupContainer}>
-                <div className={styles.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="inscriptionSport"
-                    name="inscriptionSport"
-                    checked={formData.inscriptionSport}
-                    onChange={handleChange}
-                    className={styles.checkbox}
-                  />
-                  <label htmlFor="inscriptionSport" className={styles.checkboxLabel}>
-                    Le sport
-                  </label>
-                </div>
-                
-                <div className={styles.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="inscriptionLoisirs"
-                    name="inscriptionLoisirs"
-                    checked={formData.inscriptionLoisirs}
-                    onChange={handleChange}
-                    className={styles.checkbox}
-                  />
-                  <label htmlFor="inscriptionLoisirs" className={styles.checkboxLabel}>
-                    Les sorties loisirs
-                  </label>
-                </div>
-              </div>
-              {(errors.inscriptionSport || errors.inscriptionLoisirs) && (
-                <p className={styles.error}>Veuillez sélectionner au moins une option</p>
-              )}
+              <textarea
+                id="medicalNotes"
+                name="medicalNotes"
+                value={formData.medicalNotes}
+                onChange={handleChange}
+                className={styles.textarea}
+                rows="3"
+                placeholder="Allergies, maladies chroniques, traitements en cours, etc."
+              />
             </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.checkboxGroup}>
-                <input
-                  type="checkbox"
-                  id="autorisationImage"
-                  name="autorisationImage"
-                  checked={formData.autorisationImage}
-                  onChange={handleChange}
-                  className={styles.checkbox}
-                />
-                <label htmlFor="autorisationImage" className={styles.checkboxLabel}>
-                  Je donne l'autorisation d'utiliser mon image (presse, web, réseaux sociaux, documentation interne à l'association)
-                </label>
-              </div>
-            </div>
-
-            {!formData.estBenevole && (
-              <div className={styles.infoBox}>
-                <div className={styles.infoHeader}>
-                  <FiAlertTriangle className={styles.infoIcon} />
-                  <h4 className={styles.infoTitle}>Information</h4>
-                </div>
-                <p className={styles.infoText}>
-                  Après validation de votre demande d'adhésion, vous serez contacté pour finaliser votre inscription et régler votre cotisation.
-                </p>
-              </div>
-            )}
           </div>
+        )}
 
-          <div className={styles.formFooter}>
-            <button 
-              type="submit" 
-              className={styles.submitButton}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span className={styles.loadingText}>Envoi en cours...</span>
-              ) : (
-                <>
-                  <FiSave className={styles.buttonIcon} />
-                  <span>
-                    {formData.estBenevole 
-                      ? "Envoyer ma demande de bénévolat" 
-                      : "Envoyer ma demande d'adhésion"}
-                  </span>
-                </>
-              )}
-            </button>
+        {/* Autorisation d'utilisation d'image */}
+        <div className={styles.formSection}>
+          <div className={styles.checkboxGroup}>
+            <input
+              type="checkbox"
+              id="autorisationImage"
+              name="autorisationImage"
+              checked={formData.autorisationImage}
+              onChange={handleChange}
+              className={styles.checkbox}
+            />
+            <label htmlFor="autorisationImage" className={`${styles.checkboxLabel} ${styles.legalText}`}>
+              J'autorise l'association à utiliser mon image pour la promotion de ses activités 
+              (site internet, réseaux sociaux, affiches, etc.)
+            </label>
           </div>
+        </div>
 
-          <p className={styles.requiredFieldsNote}>* Champs obligatoires</p>
-        </form>
-      )}
+        <div className={styles.formFooter}>
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={onCancel}
+          >
+            Annuler
+          </button>
+          <button 
+            type="submit" 
+            className={styles.submitButton}
+            disabled={loading}
+          >
+            {loading ? "Envoi en cours..." : "Envoyer la demande"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

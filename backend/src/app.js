@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -8,7 +9,9 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const recurringActivityRoutes = require("./routes/recurringActivityRoutes");
-const membershipRequestRoutes = require("./routes/membershipRequestRoutes"); // New route
+const formuleRoutes = require("./routes/formuleRoutes"); // Add this line
+const membershipRequestRoutes = require("./routes/membershipRequestRoutes"); // Add this line
+// Add any other route imports you might need here
 
 const app = express();
 
@@ -35,28 +38,14 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Define a stricter rate limiter for public routes to prevent abuse
-const publicRoutesLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // limit each IP to 10 requests per hour
-  message: {
-    status: "fail",
-    message: "Too many requests from this IP, please try again after an hour",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
+// Register routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/recurring-activities", recurringActivityRoutes);
-
-// Public routes with stricter rate limiting
-app.use("/api/public/membership-requests", publicRoutesLimiter, membershipRequestRoutes);
-
-// Admin routes for membership requests
-app.use("/api/membership-requests", membershipRequestRoutes);
+app.use("/api/formules", formuleRoutes); // Add this line
+app.use("/api/membership-requests", membershipRequestRoutes); // Add this line
+// Add any other route registrations you might need here
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

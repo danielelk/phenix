@@ -1,119 +1,112 @@
-.requestsContainer {
-  width: 100%;
+.requestsListContainer {
+  padding: 1rem 0;
 }
 
-.headerControls {
-  display: flex;
-  gap: 1rem;
+.pageTitle {
   margin-bottom: 1.5rem;
 }
 
-.searchBar {
-  position: relative;
-  flex: 1;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
   color: var(--color-text-muted);
 }
 
-.searchInput {
-  width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
-
-.statusFilter {
-  position: relative;
-  width: 200px;
-}
-
-.filterIcon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-text-muted);
-}
-
-.filterSelect {
-  width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px;
-}
-
-.tableContainer {
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
   background-color: var(--color-background-light);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
-  overflow-x: auto;
 }
 
-.requestsTable {
-  width: 100%;
-  border-collapse: collapse;
+.emptyState svg {
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
 }
 
-.requestsTable th,
-.requestsTable td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
+.emptyState p {
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
-.requestsTable th {
-  font-weight: 600;
-  color: var(--color-text);
-  background-color: var(--color-background-dark);
+.requestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.requestsTable tr:last-child td {
-  border-bottom: none;
+.requestCard {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-.requestsTable tr:hover td {
-  background-color: rgba(245, 166, 35, 0.05);
+.requestHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  gap: 1rem;
 }
 
-.statusBadge {
+.requestBasicInfo {
+  flex: 1;
+}
+
+.requestName {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.requestEmail {
+  margin: 0.25rem 0 0 0;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+.requestMeta {
+  text-align: right;
+}
+
+.requestDate {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.pendingBadge,
+.approvedBadge,
+.rejectedBadge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
   font-size: var(--font-size-xs);
   font-weight: 500;
 }
 
-.statusPending {
-  background-color: rgba(255, 193, 7, 0.15);
-  color: #856404;
+.pendingBadge {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
 }
 
-.statusApproved {
-  background-color: rgba(40, 167, 69, 0.15);
-  color: #155724;
+.approvedBadge {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--color-success);
 }
 
-.statusRejected {
-  background-color: rgba(220, 53, 69, 0.15);
-  color: #721c24;
+.rejectedBadge {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger);
 }
 
-.actions {
+.requestActions {
   display: flex;
   gap: 0.5rem;
 }
@@ -122,81 +115,71 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius);
   background: none;
   border: none;
-  color: var(--color-secondary);
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .actionButton:hover {
   background-color: var(--color-background-dark);
-}
-
-.approveButton {
-  color: #28a745;
+  color: var(--color-text);
 }
 
 .approveButton:hover {
   background-color: rgba(40, 167, 69, 0.1);
-}
-
-.rejectButton {
-  color: #dc3545;
+  color: var(--color-success);
 }
 
 .rejectButton:hover {
   background-color: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger);
 }
 
-.noResults {
-  text-align: center;
-  padding: 2rem !important;
-  color: var(--color-text-muted);
+.requestDetails {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--color-border);
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: var(--color-text-muted);
-  background-color: var(--color-background-light);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
 }
 
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.detailSection {
   margin-top: 1.5rem;
 }
 
-.pageButton {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-background-light);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: background-color 0.2s;
+.sectionTitle {
+  font-size: var(--font-size-base);
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.pageButton:hover:not(:disabled) {
-  background-color: var(--color-background-dark);
+.detailItem {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.pageButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pageInfo {
+.detailLabel {
+  font-size: var(--font-size-sm);
   color: var(--color-text-light);
+  margin-bottom: 0.25rem;
 }
 
-/* Details overlay */
-.detailsOverlay {
+.detailValue {
+  word-break: break-word;
+}
+
+/* Approve dialog */
+.approveOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -209,151 +192,99 @@
   z-index: 1000;
 }
 
-.detailsContainer {
+.approveDialog {
   background-color: var(--color-background-light);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
+  padding: 2rem;
   width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 600px;
 }
 
-.detailsHeader {
+.approveDialog h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.paymentDetails {
+  background-color: var(--color-background);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.paymentDetails h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: var(--font-size-base);
+}
+
+.formuleInfo {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-border);
 }
 
-.detailsTitle {
-  margin: 0;
-  font-size: var(--font-size-xl);
+.formuleTitle {
+  font-weight: 500;
+}
+
+.formulePrice {
+  font-weight: 600;
+  font-size: var(--font-size-lg);
   color: var(--color-primary);
 }
 
-.closeButton {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.closeButton:hover {
-  background-color: var(--color-background-dark);
-  color: var(--color-text);
-}
-
-.detailsContent {
-  padding: 1.5rem;
-}
-
-.detailsSection {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.detailsSection:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.sectionTitle {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
-}
-
-.subSectionTitle {
+.frequencySelector {
   margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  font-size: var(--font-size-base);
-  color: var(--color-text-light);
 }
 
-.detailsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.frequencyLabel {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
 }
 
-.detailItem {
+.radioGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.75rem;
 }
 
-.detailLabel {
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.radioInput {
+  margin-top: 0.25rem;
+  accent-color: var(--color-primary);
+}
+
+.radioLabel {
+  display: flex;
+  flex-direction: column;
+}
+
+.frequencyPrice {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-light);
+  margin-top: 0.25rem;
 }
 
-.detailValue {
-  font-weight: 500;
-}
-
-.addressSection {
-  margin-top: 1.5rem;
-}
-
-.addressText {
-  margin: 0;
-}
-
-.medicalNotes {
-  padding: 1rem;
-  background-color: var(--color-background);
-  border-radius: var(--border-radius);
-  margin: 0;
-  font-style: italic;
-}
-
-/* Approval form */
-.approvalForm {
-  margin-top: 1rem;
-}
-
-.formGroup {
-  margin-bottom: 1.5rem;
-}
-
-.formLabel {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.formInput {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
-
-.passwordHint {
-  margin-top: 0.5rem;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
-.actionButtons {
+.approveActions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
-.rejectBtn,
-.approveBtn {
+.cancelButton,
+.confirmButton {
   padding: 0.75rem 1.5rem;
   border-radius: var(--border-radius);
   font-weight: 500;
@@ -361,36 +292,59 @@
   border: none;
 }
 
-.rejectBtn {
-  background-color: #dc3545;
-  color: white;
+.cancelButton {
+  background-color: var(--color-background-dark);
+  color: var(--color-text);
 }
 
-.approveBtn {
-  background-color: #28a745;
+.confirmButton {
+  background-color: var(--color-primary);
   color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .headerControls {
+  .requestHeader {
     flex-direction: column;
+    align-items: flex-start;
   }
 
-  .statusFilter {
+  .requestMeta {
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
     width: 100%;
+    margin: 0.5rem 0;
+  }
+
+  .requestActions {
+    align-self: flex-end;
   }
 
   .detailsGrid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .actionButtons {
+  .approveDialog {
+    max-width: 95%;
+    padding: 1.5rem;
+  }
+
+  .paymentDetails {
+    padding: 1rem;
+  }
+
+  .approveActions {
     flex-direction: column;
   }
 
-  .rejectBtn,
-  .approveBtn {
+  .cancelButton,
+  .confirmButton {
     width: 100%;
+    justify-content: center;
   }
 }

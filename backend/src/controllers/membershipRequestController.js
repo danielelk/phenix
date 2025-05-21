@@ -1,10 +1,65 @@
 const MembershipRequest = require("../models/MembershipRequest");
-const Formule = require("../models/Formule");
+const { User, userRoles } = require("../models/User");
 const logger = require("../utils/logger");
 
 /**
- * Create a new membership request (public endpoint)
- * @route POST /api/public/membership-requests
+ * Get all membership requests
+ * @route GET /api/membership-requests
+ */
+exports.getMembershipRequests = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const membershipRequests = await MembershipRequest.findAll({ status });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        membershipRequests,
+      },
+    });
+  } catch (error) {
+    logger.error("Get membership requests error:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Erreur lors de la récupération des demandes d'adhésion",
+    });
+  }
+};
+
+/**
+ * Get membership request by ID
+ * @route GET /api/membership-requests/:id
+ */
+exports.getMembershipRequestById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const membershipRequest = await MembershipRequest.findById(id);
+
+    if (!membershipRequest) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Demande d'adhésion non trouvée",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        membershipRequest,
+      },
+    });
+  } catch (error) {
+    logger.error(`Get membership request by ID error: ${error}`);
+    res.status(500).json({
+      status: "error",
+      message: "Erreur lors de la récupération de la demande d'adhésion",
+    });
+  }
+};
+
+/**
+ * Create a new membership request
+ * @route POST /api/membership-requests
  */
 exports.createMembershipRequest = async (req, res) => {
   try {
@@ -13,13 +68,6 @@ exports.createMembershipRequest = async (req, res) => {
       lastName,
       email,
       phone,
-      birthDate,
-      address,
-      city,
-      postalCode,
-      emergencyContactName,
-      emergencyContactPhone,
-      medicalNotes,
       genre,
       nationalite,
       formuleId,
@@ -27,264 +75,261 @@ exports.createMembershipRequest = async (req, res) => {
       inscriptionSport,
       inscriptionLoisirs,
       autorisationImage,
-      registrationDate,
+      notes,
     } = req.body;
 
-    // Check for required fields
-    if (!firstName || !lastName || !email || !phone || !genre || !nationalite) {
+    // Vérifier si l'email existe déjà
+    const existingRequest = await MembershipRequest.findByEmail(email);
+    if (existingRequest && existingRequest.status === 'pending') {
       return res.status(400).json({
         status: "fail",
-        message: "Missing required fields",
+        message: "Une demande d'adhésion est déjà en cours de traitement avec cet email",
       });
     }
 
-    // If not bénévole, check for required fields for adherents
-    if (!estBenevole && (!emergencyContactName || !emergencyContactPhone)) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Contact d'urgence requis pour les adhérents",
-      });
-    }
-
-    // Check for valid genre
-    if (genre && !["masculin", "feminin"].includes(genre)) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Genre invalide, doit être 'masculin' ou 'feminin'",
-      });
-    }
-
-    // Check if email is valid
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Format d'email invalide",
-      });
-    }
-
-    // Check if there's already a pending request with this email
-    const emailExists = await MembershipRequest.emailExists(email);
-    if (emailExists) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Une demande d'adhésion avec cet email existe déjà",
-      });
-    }
-
-    // Verify formule exists if provided
-    if (formuleId && !estBenevole) {
-      const formule = await Formule.findById(formuleId);
-      if (!formule) {
-        return res.status(400).json({
-          status: "fail",
-          message: "La formule sélectionnée n'existe pas",
-        });
-      }
-    }
-
-    // Verify at least one of sport or loisirs is selected
-    if (!estBenevole && !inscriptionSport && !inscriptionLoisirs) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Veuillez sélectionner au moins une option (sport ou loisirs)",
-      });
-    }
-
-    // Create membership request
-    const newRequest = await MembershipRequest.create({
+    const newMembershipRequest = await MembershipRequest.create({
       firstName,
       lastName,
       email,
       phone,
-      birthDate,
-      address,
-      city,
-      postalCode,
-      emergencyContactName: estBenevole ? null : emergencyContactName,
-      emergencyContactPhone: estBenevole ? null : emergencyContactPhone,
-      medicalNotes,
       genre,
       nationalite,
-      formuleId: estBenevole ? null : formuleId,
+      formuleId,
       estBenevole,
       inscriptionSport,
       inscriptionLoisirs,
       autorisationImage,
-      registrationDate,
+      notes,
+      status: "pending",
     });
 
-    // Send success response
     res.status(201).json({
       status: "success",
       data: {
-        id: newRequest.id,
-        message: "Demande d'adhésion soumise avec succès",
+        membershipRequest: newMembershipRequest,
       },
     });
   } catch (error) {
     logger.error("Create membership request error:", error);
     res.status(500).json({
       status: "error",
-      message: "Erreur lors de la soumission de la demande d'adhésion",
+      message: "Erreur lors de la création de la demande d'adhésion",
     });
   }
 };
 
 /**
- * Get all membership requests (admin only)
- * @route GET /api/membership-requests
+ * Update membership request
+ * @route PATCH /api/membership-requests/:id
  */
-exports.getMembershipRequests = async (req, res) => {
+exports.updateMembershipRequest = async (req, res) => {
   try {
-    const { page, limit, status, search, sortBy, sortOrder } = req.query;
-
-    const result = await MembershipRequest.findAll({
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 10,
+    const { id } = req.params;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      genre,
+      nationalite,
+      formuleId,
+      estBenevole,
+      inscriptionSport,
+      inscriptionLoisirs,
+      autorisationImage,
+      notes,
       status,
-      search,
-      sortBy,
-      sortOrder: sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC",
+    } = req.body;
+
+    const updatedMembershipRequest = await MembershipRequest.update(id, {
+      firstName,
+      lastName,
+      email,
+      phone,
+      genre,
+      nationalite,
+      formuleId,
+      estBenevole,
+      inscriptionSport,
+      inscriptionLoisirs,
+      autorisationImage,
+      notes,
+      status,
     });
 
     res.status(200).json({
       status: "success",
       data: {
-        requests: result.requests,
-        pagination: result.pagination,
+        membershipRequest: updatedMembershipRequest,
       },
     });
   } catch (error) {
-    logger.error("Get membership requests error:", error);
+    logger.error(`Update membership request error: ${error}`);
     res.status(500).json({
       status: "error",
-      message: "Erreur lors du chargement des demandes d'adhésion",
+      message: "Erreur lors de la mise à jour de la demande d'adhésion",
     });
   }
 };
 
 /**
- * Get membership request by ID (admin only)
- * @route GET /api/membership-requests/:id
+ * Delete membership request
+ * @route DELETE /api/membership-requests/:id
  */
-exports.getMembershipRequestById = async (req, res) => {
+exports.deleteMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
+    const deleted = await MembershipRequest.delete(id);
 
-    const request = await MembershipRequest.findById(id);
-
-    if (!request) {
+    if (!deleted) {
       return res.status(404).json({
         status: "fail",
         message: "Demande d'adhésion non trouvée",
       });
     }
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        request,
-      },
-    });
+    res.status(204).send();
   } catch (error) {
-    logger.error("Get membership request by ID error:", error);
+    logger.error(`Delete membership request error: ${error}`);
     res.status(500).json({
       status: "error",
-      message: "Erreur lors du chargement de la demande d'adhésion",
+      message: "Erreur lors de la suppression de la demande d'adhésion",
     });
   }
 };
 
 /**
- * Update membership request status (admin only)
- * @route PATCH /api/membership-requests/:id/status
+ * Approve membership request
+ * @route POST /api/membership-requests/:id/approve
  */
-exports.updateMembershipRequestStatus = async (req, res) => {
+exports.approveMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, membershipFee, paymentFrequency } = req.body;
-
-    // Validate status
-    if (!status || !["pending", "approved", "rejected"].includes(status)) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Statut invalide",
-      });
-    }
-
-    // If approving, need membership fee for adherents
-    const request = await MembershipRequest.findById(id);
     
-    if (!request) {
+    // Trouver la demande d'adhésion
+    const membershipRequest = await MembershipRequest.findById(id);
+    
+    if (!membershipRequest) {
       return res.status(404).json({
         status: "fail",
         message: "Demande d'adhésion non trouvée",
       });
     }
     
-    if (status === "approved" && !request.est_benevole && !membershipFee) {
+    if (membershipRequest.status === 'approved') {
       return res.status(400).json({
         status: "fail",
-        message: "Le montant de la cotisation est requis pour approuver un adhérent",
+        message: "Cette demande d'adhésion a déjà été approuvée",
       });
     }
     
-    // If approving, validate payment frequency for adherents
-    if (status === "approved" && !request.est_benevole && paymentFrequency) {
-      if (!["monthly", "quarterly", "annual"].includes(paymentFrequency)) {
-        return res.status(400).json({
-          status: "fail",
-          message: "Fréquence de paiement invalide",
-        });
+    // Créer un nouvel utilisateur (adhérent)
+    const password = generateRandomPassword(); // Vous devez implémenter cette fonction
+    
+    const newUser = await User.create({
+      firstName: membershipRequest.first_name,
+      lastName: membershipRequest.last_name,
+      email: membershipRequest.email,
+      password: password, // Mot de passe temporaire
+      phone: membershipRequest.phone,
+      role: userRoles.ADHERENT,
+      emergencyContactName: membershipRequest.emergency_contact_name || null,
+      emergencyContactPhone: membershipRequest.emergency_contact_phone || null,
+      medicalNotes: null,
+      isVehiculed: false,
+      // Autres champs spécifiques à adhérent qu'il faudrait peut-être ajouter
+    });
+    
+    // Mettre à jour le statut de la demande
+    await MembershipRequest.update(id, {
+      status: 'approved'
+    });
+    
+    // TODO: Envoyer un email à l'utilisateur avec son mot de passe temporaire
+    
+    res.status(200).json({
+      status: "success",
+      message: "Demande d'adhésion approuvée avec succès",
+      data: {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.first_name,
+          lastName: newUser.last_name
+        }
       }
-    }
-
-    // If already processed, check if status is changing
-    if (request.status !== "pending" && request.status === status) {
-      return res.status(400).json({
-        status: "fail",
-        message: `Cette demande est déjà ${status === "approved" ? "approuvée" : "rejetée"}`,
-      });
-    }
-
-    // Additional data if approving
-    let additionalData = null;
-    if (status === "approved") {
-      additionalData = {
-        membershipFee: request.est_benevole ? 0 : parseFloat(membershipFee),
-        paymentFrequency: paymentFrequency || 'monthly',
-      };
-    }
-
-    // Update status
-    const updatedRequest = await MembershipRequest.updateStatus(id, status, additionalData);
-
-    // Response content depends on whether the request was approved
-    if (status === "approved") {
-      res.status(200).json({
-        status: "success",
-        data: {
-          request: updatedRequest,
-          message: request.est_benevole 
-            ? "Bénévole ajouté avec succès" 
-            : "Adhérent approuvé avec succès",
-          password: updatedRequest.generated_password,
-        },
-      });
-    } else {
-      res.status(200).json({
-        status: "success",
-        data: {
-          request: updatedRequest,
-        },
-      });
-    }
+    });
+    
   } catch (error) {
-    logger.error("Update membership request status error:", error);
+    logger.error(`Approve membership request error: ${error}`);
     res.status(500).json({
       status: "error",
-      message: "Erreur lors de la mise à jour du statut de la demande",
+      message: "Erreur lors de l'approbation de la demande d'adhésion",
     });
   }
 };
+
+/**
+ * Reject membership request
+ * @route POST /api/membership-requests/:id/reject
+ */
+exports.rejectMembershipRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // Trouver la demande d'adhésion
+    const membershipRequest = await MembershipRequest.findById(id);
+    
+    if (!membershipRequest) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Demande d'adhésion non trouvée",
+      });
+    }
+    
+    if (membershipRequest.status === 'rejected') {
+      return res.status(400).json({
+        status: "fail",
+        message: "Cette demande d'adhésion a déjà été rejetée",
+      });
+    }
+    
+    // Mettre à jour le statut de la demande
+    await MembershipRequest.update(id, {
+      status: 'rejected',
+      notes: reason || membershipRequest.notes
+    });
+    
+    // TODO: Envoyer un email à l'utilisateur pour l'informer du rejet
+    
+    res.status(200).json({
+      status: "success",
+      message: "Demande d'adhésion rejetée avec succès"
+    });
+    
+  } catch (error) {
+    logger.error(`Reject membership request error: ${error}`);
+    res.status(500).json({
+      status: "error",
+      message: "Erreur lors du rejet de la demande d'adhésion",
+    });
+  }
+};
+
+/**
+ * Générer un mot de passe aléatoire
+ * @returns {string} Mot de passe généré
+ */
+function generateRandomPassword() {
+  const length = 10;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+  let password = "";
+  
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  
+  return password;
+}
