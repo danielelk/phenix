@@ -24,10 +24,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const { response } = error;
+    // Don't treat 304 Not Modified as an error
+    if (error.response && error.response.status === 304) {
+      // Return the cached data (no actual data in the 304 response)
+      // Use an empty object as fallback for empty responses
+      return error.response.data || {};
+    }
 
     // Handle unauthorized errors (token expired, etc.)
-    if (response && response.status === 401) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
