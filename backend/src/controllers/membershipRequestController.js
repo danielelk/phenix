@@ -2,19 +2,15 @@ const { MembershipRequest } = require("../models/MembershipRequest");
 const { User, userRoles } = require("../models/User");
 const logger = require("../utils/logger");
 
-/**
- * Get all membership requests
- * @route GET /api/membership-requests
- */
 exports.getMembershipRequests = async (req, res) => {
   try {
     const { status } = req.query;
-    const membershipRequests = await MembershipRequest.findAll({ status });
+    const requests = await MembershipRequest.findAll({ status });
 
     res.status(200).json({
       status: "success",
       data: {
-        membershipRequests,
+        membershipRequests: requests,
       },
     });
   } catch (error) {
@@ -26,10 +22,6 @@ exports.getMembershipRequests = async (req, res) => {
   }
 };
 
-/**
- * Get membership request by ID
- * @route GET /api/membership-requests/:id
- */
 exports.getMembershipRequestById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -57,10 +49,6 @@ exports.getMembershipRequestById = async (req, res) => {
   }
 };
 
-/**
- * Create a new membership request
- * @route POST /api/membership-requests
- */
 exports.createMembershipRequest = async (req, res) => {
   try {
     const {
@@ -140,10 +128,6 @@ exports.createMembershipRequest = async (req, res) => {
   }
 };
 
-/**
- * Update membership request
- * @route PATCH /api/membership-requests/:id
- */
 exports.updateMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -210,10 +194,6 @@ exports.updateMembershipRequest = async (req, res) => {
   }
 };
 
-/**
- * Delete membership request
- * @route DELETE /api/membership-requests/:id
- */
 exports.deleteMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -236,15 +216,10 @@ exports.deleteMembershipRequest = async (req, res) => {
   }
 };
 
-/**
- * Approve membership request
- * @route POST /api/membership-requests/:id/approve
- */
 exports.approveMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Trouver la demande d'adhésion
     const membershipRequest = await MembershipRequest.findById(id);
     
     if (!membershipRequest) {
@@ -261,29 +236,24 @@ exports.approveMembershipRequest = async (req, res) => {
       });
     }
     
-    // Créer un nouvel utilisateur (adhérent)
-    const password = generateRandomPassword(); // Vous devez implémenter cette fonction
+    const password = generateRandomPassword();
     
     const newUser = await User.create({
       firstName: membershipRequest.first_name,
       lastName: membershipRequest.last_name,
       email: membershipRequest.email,
-      password: password, // Mot de passe temporaire
+      password: password,
       phone: membershipRequest.phone,
       role: userRoles.ADHERENT,
       emergencyContactName: membershipRequest.emergency_contact_name || null,
       emergencyContactPhone: membershipRequest.emergency_contact_phone || null,
-      medicalNotes: null,
+      medicalNotes: membershipRequest.medical_notes || null,
       isVehiculed: false,
-      // Autres champs spécifiques à adhérent qu'il faudrait peut-être ajouter
     });
     
-    // Mettre à jour le statut de la demande
     await MembershipRequest.update(id, {
       status: 'approved'
     });
-    
-    // TODO: Envoyer un email à l'utilisateur avec son mot de passe temporaire
     
     res.status(200).json({
       status: "success",
@@ -307,16 +277,11 @@ exports.approveMembershipRequest = async (req, res) => {
   }
 };
 
-/**
- * Reject membership request
- * @route POST /api/membership-requests/:id/reject
- */
 exports.rejectMembershipRequest = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
     
-    // Trouver la demande d'adhésion
     const membershipRequest = await MembershipRequest.findById(id);
     
     if (!membershipRequest) {
@@ -333,13 +298,10 @@ exports.rejectMembershipRequest = async (req, res) => {
       });
     }
     
-    // Mettre à jour le statut de la demande
     await MembershipRequest.update(id, {
       status: 'rejected',
       notes: reason || membershipRequest.notes
     });
-    
-    // TODO: Envoyer un email à l'utilisateur pour l'informer du rejet
     
     res.status(200).json({
       status: "success",
@@ -355,10 +317,6 @@ exports.rejectMembershipRequest = async (req, res) => {
   }
 };
 
-/**
- * Générer un mot de passe aléatoire
- * @returns {string} Mot de passe généré
- */
 function generateRandomPassword() {
   const length = 10;
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";

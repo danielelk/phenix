@@ -20,12 +20,10 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredAdherents, setFilteredAdherents] = useState([]);
 
-  // Load data on component mount
   useEffect(() => {
     fetchData();
   }, [activity]);
 
-  // Filter adherents based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredAdherents(availableAdherents);
@@ -41,21 +39,15 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
     }
   }, [searchTerm, availableAdherents]);
 
-  // Fetch participants and available adherents
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Get activity details with participants
-      const activityDetails = await activityService.getActivityById(
-        activity.id
-      );
+      const activityDetails = await activityService.getActivityById(activity.id);
       setParticipants(activityDetails.data.participants || []);
 
-      // Get all adherents
       const allAdherentsResponse = await userService.getAdherents();
       const allAdherents = allAdherentsResponse.data.adherents || [];
 
-      // Filter out adherents that are already participants
       const participantIds = activityDetails.data.participants.map((p) => p.id);
       const available = allAdherents.filter(
         (adherent) => !participantIds.includes(adherent.id)
@@ -71,22 +63,20 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
     }
   };
 
-  // Add participant to activity
   const handleAddParticipant = async (adherent) => {
     try {
       await activityService.addParticipant(activity.id, adherent.id, false);
 
-      // Update lists
+      // Update local state instead of refetching
       setParticipants((prev) => [...prev, adherent]);
       setAvailableAdherents((prev) => prev.filter((a) => a.id !== adherent.id));
-      setAddingParticipant(false);
       setSearchTerm("");
 
       toast.success(
         `${adherent.first_name} ${adherent.last_name} ajouté(e) à l'activité`
       );
 
-      // Trigger parent update if needed
+      // Only trigger parent update for activity list refresh, don't close modal
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Error adding participant:", error);
@@ -94,12 +84,11 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
     }
   };
 
-  // Remove participant from activity
   const handleRemoveParticipant = async (participant) => {
     try {
       await activityService.removeParticipant(activity.id, participant.id);
 
-      // Update lists
+      // Update local state instead of refetching
       setParticipants((prev) => prev.filter((p) => p.id !== participant.id));
       setAvailableAdherents((prev) => [...prev, participant]);
 
@@ -107,7 +96,7 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
         `${participant.first_name} ${participant.last_name} retiré(e) de l'activité`
       );
 
-      // Trigger parent update if needed
+      // Only trigger parent update for activity list refresh, don't close modal
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Error removing participant:", error);
@@ -115,10 +104,9 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
     }
   };
 
-  // Toggle needs transport for a participant
   const toggleTransportNeeded = async (participant) => {
     try {
-      // If participant is already in the activity, we need to remove and re-add with new transport setting
+      // Remove and re-add with new transport setting
       await activityService.removeParticipant(activity.id, participant.id);
       await activityService.addParticipant(
         activity.id,
@@ -126,7 +114,7 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
         !participant.needs_transport
       );
 
-      // Update participant in the list
+      // Update local state
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === participant.id
@@ -141,7 +129,7 @@ const ActivityParticipants = ({ activity, onClose, onUpdate }) => {
         } pour ${participant.first_name} ${participant.last_name}`
       );
 
-      // Trigger parent update if needed
+      // Only trigger parent update for activity list refresh, don't close modal
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Error updating transport need:", error);

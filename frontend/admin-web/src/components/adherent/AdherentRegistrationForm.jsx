@@ -33,8 +33,13 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
   useEffect(() => {
     const fetchFormules = async () => {
       try {
-        const response = await formulesService.getFormules();
-        setFormules(response.data.formules.filter(formule => formule.est_actif));
+        const response = await formulesService.getPublicFormules();
+        console.log("Formules response:", response);
+        
+        const formulesData = response.data?.formules || response.formules || [];
+        const activeFormules = formulesData.filter(formule => formule.est_actif);
+        
+        setFormules(activeFormules);
       } catch (error) {
         console.error("Erreur lors du chargement des formules:", error);
         toast.error("Erreur lors du chargement des formules");
@@ -147,7 +152,9 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     setLoading(true);
 
     try {
+      console.log("Submitting form data:", formData);
       const result = await membershipService.createMembershipRequest(formData);
+      console.log("Submit result:", result);
       
       toast.success("Demande d'adhésion envoyée avec succès");
       
@@ -166,14 +173,16 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
     <div className={styles.formWrapper}>
       <div className={styles.formHeader}>
         <h2>Demande d'adhésion</h2>
-        <button
-          className={styles.closeButton}
-          onClick={onCancel}
-          type="button"
-          aria-label="Fermer"
-        >
-          <FiX size={24} />
-        </button>
+        {onCancel && (
+          <button
+            className={styles.closeButton}
+            onClick={onCancel}
+            type="button"
+            aria-label="Fermer"
+          >
+            <FiX size={24} />
+          </button>
+        )}
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>
@@ -181,7 +190,6 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
           <FiAlertCircle size={20} />
           <p>
             Cette demande sera soumise à l'administration de l'association pour validation.
-            Vous recevrez une confirmation par email.
           </p>
         </div>
 
@@ -522,13 +530,15 @@ const AdherentRegistrationForm = ({ onSubmit, onCancel }) => {
         </div>
 
         <div className={styles.formFooter}>
-          <button
-            type="button"
-            className={styles.cancelButton}
-            onClick={onCancel}
-          >
-            Annuler
-          </button>
+          {onCancel && (
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onCancel}
+            >
+              Annuler
+            </button>
+          )}
           <button 
             type="submit" 
             className={styles.submitButton}

@@ -1,0 +1,168 @@
+.confirmationPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.1) 0%, rgba(245, 166, 35, 0.05) 50%, rgba(255, 255, 255, 0.1) 100%);
+  padding: 4rem 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirmationCard {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-xl);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 4rem 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.confirmationCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+}
+
+.successIcon {
+  color: var(--color-success);
+  margin-bottom: 2rem;
+  animation: checkmark 0.8s ease-in-out;
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.title {
+  font-size: var(--font-size-3xl);
+  margin-bottom: 1.5rem;
+  color: var(--color-text);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-light);
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.thankYouMessage {
+  padding: 2rem;
+  background: rgba(245, 166, 35, 0.05);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+}
+
+.thankYouMessage p {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+}
+
+.thankYouMessage p:first-child {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.thankYouMessage p:last-child {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.footer {
+  margin-top: 4rem;
+  padding: 2rem 0;
+}
+
+.footerContent {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.copyright {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .confirmationPage {
+    padding: 2rem 1rem;
+  }
+
+  .confirmationCard {
+    padding: 3rem 2rem;
+    max-width: 100%;
+  }
+
+  .title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-base);
+  }
+
+  .successIcon {
+    margin-bottom: 1.5rem;
+  }
+
+  .footer {
+    margin-top: 2rem;
+  }
+}
+
+  .infoItem {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .infoContent {
+    text-align: center;
+  }
+
+  .summaryItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .stepsList li {
+    padding-left: 2.5rem;
+  }
+
+  .stepsList li::before {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: var(--font-size-xs);
+  }
+
+  .footerLinks {
+    flex-direction: column;
+    gap: 0.5rem;
+  }

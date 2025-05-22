@@ -9,33 +9,27 @@ import ActivityForm from "../../components/activities/ActivityForm";
 const Activities = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("calendar"); // 'calendar' ou 'list'
+  const [view, setView] = useState("calendar");
   const [showForm, setShowForm] = useState(false);
   const [currentActivity, setCurrentActivity] = useState(null);
   const [filterType, setFilterType] = useState("all");
-  const [confirmDelete, setConfirmDelete] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Load activities on component mount and when date/filter changes
   useEffect(() => {
     fetchActivities();
   }, [currentDate, filterType]);
 
-  // Fetch activities for the current month/year
   const fetchActivities = async () => {
     setLoading(true);
     try {
-      // Get start and end date for the current month
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
 
-      // Format dates for API
       const formattedStartDate = startDate.toISOString().split("T")[0];
       const formattedEndDate = endDate.toISOString().split("T")[0];
 
-      // Add type filter if not 'all'
       const params = {};
       if (filterType !== "all") {
         params.type = filterType;
@@ -56,15 +50,12 @@ const Activities = () => {
     }
   };
 
-  // Handle activity form submission (create/update)
   const handleActivitySubmit = async (activityData) => {
     try {
       if (currentActivity) {
-        // Update existing activity
         await activityService.updateActivity(currentActivity.id, activityData);
         toast.success("Activité mise à jour avec succès");
       } else {
-        // Create new activity
         await activityService.createActivity(activityData);
         toast.success("Activité créée avec succès");
       }
@@ -77,32 +68,54 @@ const Activities = () => {
     }
   };
 
-  // Open form to create new activity
   const handleAddActivity = () => {
     setCurrentActivity(null);
     setShowForm(true);
   };
 
-  // Open form to edit activity
   const handleEditActivity = (activity) => {
     setCurrentActivity(activity);
     setShowForm(true);
   };
 
-  // Toggle between calendar and list view
+  const handleDeleteActivity = async (activityId) => {
+    try {
+      await activityService.deleteActivity(activityId);
+      toast.success("Activité supprimée avec succès");
+      fetchActivities();
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast.error("Erreur lors de la suppression de l'activité");
+    }
+  };
+
   const toggleView = (newView) => {
     setView(newView);
   };
 
-  // Handle month change in calendar
   const handleMonthChange = (date) => {
     setCurrentDate(date);
   };
 
-  // Handle participants changed
-  const handleParticipantsChanged = () => {
-    // Refresh activities to get updated participant counts
-    fetchActivities();
+  const handleParticipantsChanged = async (activityId) => {
+    // Update only the specific activity in the list instead of refetching everything
+    try {
+      const updatedActivityResponse = await activityService.getActivityById(activityId);
+      const updatedActivity = updatedActivityResponse.data.activity;
+      
+      // Update the activities list with the new participant count
+      setActivities(prevActivities => 
+        prevActivities.map(activity => 
+          activity.id === activityId 
+            ? { ...activity, participant_count: updatedActivity.participant_count || 0 }
+            : activity
+        )
+      );
+    } catch (error) {
+      console.error("Error updating activity data:", error);
+      // If there's an error, fall back to full refresh
+      fetchActivities();
+    }
   };
 
   return (
@@ -164,13 +177,13 @@ const Activities = () => {
             <ActivityCalendar
               activities={activities}
               onEditActivity={handleEditActivity}
+              onDeleteActivity={handleDeleteActivity}
               currentDate={currentDate}
               onMonthChange={handleMonthChange}
               onParticipantsChanged={handleParticipantsChanged}
             />
           ) : (
             <div className={styles.listView}>
-              {/* List view would be implemented here */}
               <p>Vue liste à implémenter</p>
             </div>
           )}

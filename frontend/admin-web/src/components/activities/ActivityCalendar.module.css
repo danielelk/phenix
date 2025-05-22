@@ -214,11 +214,6 @@
   font-size: var(--font-size-lg);
 }
 
-.actionsButtons {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .actionsButtonsContainer {
   display: flex;
   flex-direction: column;
@@ -228,7 +223,9 @@
 }
 
 .editButton,
-.participantsButton {
+.participantsButton,
+.accompagnateursButton,
+.deleteButton {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -256,6 +253,24 @@
 
 .participantsButton:hover {
   background-color: var(--color-primary-dark);
+}
+
+.accompagnateursButton {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+.accompagnateursButton:hover {
+  background-color: var(--color-secondary-dark);
+}
+
+.deleteButton {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
 }
 
 .detailsContent {
@@ -308,7 +323,8 @@
   background-color: var(--color-border);
 }
 
-.participantsOverlay {
+.participantsOverlay,
+.deleteOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -331,7 +347,52 @@
   overflow-y: auto;
 }
 
-/* Responsive adjustments */
+.deleteDialog {
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.deleteDialog h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.deleteWarning {
+  color: var(--color-danger);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.deleteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.cancelButton,
+.confirmButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.cancelButton {
+  background-color: var(--color-background-dark);
+  color: var(--color-text);
+}
+
+.confirmButton {
+  background-color: var(--color-danger);
+  color: white;
+}
+
 @media (max-width: 1024px) {
   .activityDetails {
     width: 300px;
@@ -369,5 +430,10 @@
   .participantsContainer {
     max-width: calc(100% - 2rem);
     max-height: calc(100% - 2rem);
+  }
+
+  .deleteDialog {
+    max-width: calc(100% - 2rem);
+    padding: 1.5rem;
   }
 }

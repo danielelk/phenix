@@ -1,9 +1,5 @@
 const logger = require("../utils/logger");
 
-/**
- * Middleware for validating request data
- * @param {Function} schema - Validation schema function
- */
 exports.validate = (schema) => {
   return (req, res, next) => {
     try {
@@ -21,7 +17,6 @@ exports.validate = (schema) => {
         });
       }
 
-      // Replace request body with validated data
       req.body = value;
       next();
     } catch (err) {
@@ -31,17 +26,10 @@ exports.validate = (schema) => {
   };
 };
 
-/**
- * Basic validation schemas
- */
 exports.schemas = {
-  /**
-   * User registration validation
-   */
   userRegistration: (data) => {
     const errors = [];
 
-    // Validate required fields
     if (!data.firstName || data.firstName.trim() === "") {
       errors.push({
         context: { key: "firstName" },
@@ -62,7 +50,6 @@ exports.schemas = {
         message: "L'email est requis",
       });
     } else {
-      // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(data.email)) {
         errors.push({
@@ -84,7 +71,6 @@ exports.schemas = {
       });
     }
 
-    // Validate role
     const validRoles = ["admin", "accompagnateur", "adherent", "benevole"];
     if (!data.role || !validRoles.includes(data.role)) {
       errors.push({
@@ -99,13 +85,9 @@ exports.schemas = {
     };
   },
 
-  /**
-   * User update validation
-   */
   userUpdate: (data) => {
     const errors = [];
 
-    // Validate optional fields if present
     if (
       data.firstName !== undefined &&
       (data.firstName === null || data.firstName.trim() === "")
@@ -133,7 +115,6 @@ exports.schemas = {
           message: "L'email ne peut pas être vide",
         });
       } else {
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(data.email)) {
           errors.push({
@@ -144,7 +125,6 @@ exports.schemas = {
       }
     }
 
-    // Validate role if present
     if (data.role !== undefined) {
       const validRoles = ["admin", "accompagnateur", "adherent", "benevole"];
       if (!validRoles.includes(data.role)) {
@@ -161,9 +141,6 @@ exports.schemas = {
     };
   },
 
-  /**
-   * Login validation
-   */
   login: (data) => {
     const errors = [];
 
@@ -230,8 +207,7 @@ exports.schemas = {
       });
     }
 
-    // Validate activity type
-    const validTypes = ["with_adherents", "without_adherents"];
+    const validTypes = ["with_adherents", "without_adherents", "br"];
     if (!data.type || !validTypes.includes(data.type)) {
       errors.push({
         context: { key: "type" },
@@ -239,7 +215,6 @@ exports.schemas = {
       });
     }
 
-    // Validate transport capacity if transport is available
     if (
       data.transportAvailable &&
       (data.transportCapacity === undefined || data.transportCapacity < 1)
@@ -251,7 +226,6 @@ exports.schemas = {
       });
     }
 
-    // Validate price if activity is paid
     if (
       data.isPaid &&
       (data.price === undefined || parseFloat(data.price) <= 0)
@@ -268,9 +242,6 @@ exports.schemas = {
     };
   },
 
-  /**
-   * Activity update validation
-   */
   activityUpdate: (data) => {
     const errors = [];
 
@@ -297,9 +268,8 @@ exports.schemas = {
       }
     }
 
-    // Validate activity type if present
     if (data.type !== undefined) {
-      const validTypes = ["with_adherents", "without_adherents"];
+      const validTypes = ["with_adherents", "without_adherents", "br"];
       if (!validTypes.includes(data.type)) {
         errors.push({
           context: { key: "type" },
@@ -308,7 +278,6 @@ exports.schemas = {
       }
     }
 
-    // Validate transport capacity if transport is available
     if (
       data.transportAvailable === true &&
       (data.transportCapacity === undefined || data.transportCapacity < 1)
@@ -320,7 +289,6 @@ exports.schemas = {
       });
     }
 
-    // Validate price if activity is paid
     if (
       data.isPaid === true &&
       (data.price === undefined || parseFloat(data.price) <= 0)

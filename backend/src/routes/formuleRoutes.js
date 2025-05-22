@@ -12,10 +12,8 @@ const { userRoles } = require("../models/User");
 
 const router = express.Router();
 
-// Public route for formules
 router.get("/public", getPublicFormules);
 
-// Protected routes for admins
 router.use(protect);
 router.use(restrictTo(userRoles.ADMIN));
 

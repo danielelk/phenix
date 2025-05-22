@@ -1,10 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./AdherentRegistrationPage.module.css";
 import AdherentRegistrationForm from "../../components/adherent/AdherentRegistrationForm";
+import RegistrationConfirmation from "./RegistrationConfirmation";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AdherentRegistrationPage = () => {
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState(null);
+  const navigate = useNavigate();
+
+  const handleFormSubmit = (result) => {
+    setSubmittedData(result.data?.membershipRequest);
+    setIsSubmitted(true);
+  };
+
+  const handleGoHome = () => {
+    navigate("/");
+  };
+
+  if (isSubmitted) {
+    return <RegistrationConfirmation requestData={submittedData} />;
+  }
+
   return (
     <div className={styles.registrationPage}>
       <ToastContainer
@@ -20,7 +39,7 @@ const AdherentRegistrationPage = () => {
         theme="light"
       />
 
-      <AdherentRegistrationForm />
+      <AdherentRegistrationForm onSubmit={handleFormSubmit} />
 
       <footer className={styles.footer}>
         <div className={styles.footerContent}>

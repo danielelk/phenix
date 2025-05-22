@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import styles from "./RecurringActivityForm.module.css";
-import { FiX } from "react-icons/fi";
+import { FiX, FiUsers, FiUserCheck } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
+import userService from "../../services/users";
 
 const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     location: "",
-    dayOfWeek: 1, // Monday
+    dayOfWeek: 1,
     startTime: "09:00",
     endTime: "10:00",
     recurrenceType: "weekly",
@@ -25,7 +26,13 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
     regenerateInstances: true,
   });
 
-  // Days of the week
+  const [participants, setParticipants] = useState([]);
+  const [accompagnateurs, setAccompagnateurs] = useState([]);
+  const [availableAdherents, setAvailableAdherents] = useState([]);
+  const [availableAccompagnateurs, setAvailableAccompagnateurs] = useState([]);
+  const [showParticipantsSection, setShowParticipantsSection] = useState(false);
+  const [showAccompagnateursSection, setShowAccompagnateursSection] = useState(false);
+
   const daysOfWeek = [
     { value: 0, label: "Dimanche" },
     { value: 1, label: "Lundi" },
@@ -36,14 +43,16 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
     { value: 6, label: "Samedi" },
   ];
 
-  // Recurrence types
   const recurrenceTypes = [
     { value: "weekly", label: "Hebdomadaire" },
     { value: "biweekly", label: "Bimensuelle" },
     { value: "monthly", label: "Mensuelle" },
   ];
 
-  // If editing an existing recurring activity, pre-fill the form
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   useEffect(() => {
     if (recurringActivity) {
       setFormData({
@@ -70,10 +79,31 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
           : "",
         regenerateInstances: true,
       });
+
+      if (recurringActivity.default_participants) {
+        setParticipants(recurringActivity.default_participants);
+      }
+      if (recurringActivity.default_accompagnateurs) {
+        setAccompagnateurs(recurringActivity.default_accompagnateurs);
+      }
     }
   }, [recurringActivity]);
 
-  // Handle input changes
+  const fetchUsers = async () => {
+    try {
+      const [adherentsResponse, accompagnateursResponse] = await Promise.all([
+        userService.getAdherents(),
+        userService.getAccompagnateurs(),
+      ]);
+
+      setAvailableAdherents(adherentsResponse.data.adherents || []);
+      setAvailableAccompagnateurs(accompagnateursResponse.data.accompagnateurs || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Erreur lors du chargement des utilisateurs");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -82,7 +112,26 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
     }));
   };
 
-  // Validate form data
+  const handleAddParticipant = (adherent) => {
+    if (!participants.find(p => p.id === adherent.id)) {
+      setParticipants(prev => [...prev, adherent]);
+    }
+  };
+
+  const handleRemoveParticipant = (adherentId) => {
+    setParticipants(prev => prev.filter(p => p.id !== adherentId));
+  };
+
+  const handleAddAccompagnateur = (accompagnateur) => {
+    if (!accompagnateurs.find(a => a.id === accompagnateur.id)) {
+      setAccompagnateurs(prev => [...prev, accompagnateur]);
+    }
+  };
+
+  const handleRemoveAccompagnateur = (accompagnateurId) => {
+    setAccompagnateurs(prev => prev.filter(a => a.id !== accompagnateurId));
+  };
+
   const validateForm = () => {
     if (!formData.title.trim()) {
       toast.error("Le titre est requis");
@@ -109,7 +158,6 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
       return false;
     }
 
-    // Check if start time is before end time
     const startTime = formData.startTime.split(":");
     const endTime = formData.endTime.split(":");
     const startHour = parseInt(startTime[0], 10);
@@ -125,7 +173,6 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
       return false;
     }
 
-    // Validate transport capacity if transport is available
     if (
       formData.transportAvailable &&
       (!formData.transportCapacity || parseInt(formData.transportCapacity) < 1)
@@ -134,7 +181,6 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
       return false;
     }
 
-    // Validate price if activity is paid
     if (
       formData.isPaid &&
       (!formData.price || parseFloat(formData.price) <= 0)
@@ -146,19 +192,31 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
     return true;
   };
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (validateForm()) {
-      // Convert dayOfWeek to integer
       const formattedData = {
         ...formData,
         dayOfWeek: parseInt(formData.dayOfWeek, 10),
+        defaultParticipants: participants.map(p => p.id),
+        defaultAccompagnateurs: accompagnateurs.map(a => a.id),
       };
 
       onSubmit(formattedData);
     }
+  };
+
+  const getAvailableAdherents = () => {
+    return availableAdherents.filter(
+      adherent => !participants.find(p => p.id === adherent.id)
+    );
+  };
+
+  const getAvailableAccompagnateurs = () => {
+    return availableAccompagnateurs.filter(
+      accompagnateur => !accompagnateurs.find(a => a.id === accompagnateur.id)
+    );
   };
 
   return (
@@ -437,6 +495,124 @@ const RecurringActivityForm = ({ recurringActivity, onSubmit, onCancel }) => {
             rows="4"
             placeholder="Description de l'activité"
           />
+        </div>
+
+        {formData.type === "with_adherents" && (
+          <div className={styles.participantsSection}>
+            <div className={styles.sectionHeader}>
+              <h3>Participants par défaut</h3>
+              <button
+                type="button"
+                className={styles.toggleButton}
+                onClick={() => setShowParticipantsSection(!showParticipantsSection)}
+              >
+                <FiUsers size={18} />
+                {showParticipantsSection ? "Masquer" : "Gérer"} ({participants.length})
+              </button>
+            </div>
+
+            {showParticipantsSection && (
+              <div className={styles.usersManagement}>
+                <div className={styles.selectedUsers}>
+                  <h4>Participants sélectionnés ({participants.length})</h4>
+                  {participants.length === 0 ? (
+                    <p className={styles.emptyMessage}>Aucun participant sélectionné</p>
+                  ) : (
+                    <div className={styles.usersList}>
+                      {participants.map(participant => (
+                        <div key={participant.id} className={styles.userItem}>
+                          <span>{participant.last_name} {participant.first_name}</span>
+                          <button
+                            type="button"
+                            className={styles.removeUserButton}
+                            onClick={() => handleRemoveParticipant(participant.id)}
+                          >
+                            <FiX size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.availableUsers}>
+                  <h4>Adhérents disponibles</h4>
+                  <div className={styles.usersList}>
+                    {getAvailableAdherents().map(adherent => (
+                      <div key={adherent.id} className={styles.userItem}>
+                        <span>{adherent.last_name} {adherent.first_name}</span>
+                        <button
+                          type="button"
+                          className={styles.addUserButton}
+                          onClick={() => handleAddParticipant(adherent)}
+                        >
+                          Ajouter
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={styles.accompagnateursSection}>
+          <div className={styles.sectionHeader}>
+            <h3>Accompagnateurs par défaut</h3>
+            <button
+              type="button"
+              className={styles.toggleButton}
+              onClick={() => setShowAccompagnateursSection(!showAccompagnateursSection)}
+            >
+              <FiUserCheck size={18} />
+              {showAccompagnateursSection ? "Masquer" : "Gérer"} ({accompagnateurs.length})
+            </button>
+          </div>
+
+          {showAccompagnateursSection && (
+            <div className={styles.usersManagement}>
+              <div className={styles.selectedUsers}>
+                <h4>Accompagnateurs sélectionnés ({accompagnateurs.length})</h4>
+                {accompagnateurs.length === 0 ? (
+                  <p className={styles.emptyMessage}>Aucun accompagnateur sélectionné</p>
+                ) : (
+                  <div className={styles.usersList}>
+                    {accompagnateurs.map(accompagnateur => (
+                      <div key={accompagnateur.id} className={styles.userItem}>
+                        <span>{accompagnateur.last_name} {accompagnateur.first_name}</span>
+                        <button
+                          type="button"
+                          className={styles.removeUserButton}
+                          onClick={() => handleRemoveAccompagnateur(accompagnateur.id)}
+                        >
+                          <FiX size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.availableUsers}>
+                <h4>Accompagnateurs disponibles</h4>
+                <div className={styles.usersList}>
+                  {getAvailableAccompagnateurs().map(accompagnateur => (
+                    <div key={accompagnateur.id} className={styles.userItem}>
+                      <span>{accompagnateur.last_name} {accompagnateur.first_name}</span>
+                      <button
+                        type="button"
+                        className={styles.addUserButton}
+                        onClick={() => handleAddAccompagnateur(accompagnateur)}
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {recurringActivity && (

@@ -1,8 +1,9 @@
 const db = require("../config/db");
 
 const activityTypes = {
-  WITH_ADHERENTS: "with_adherents", // Activities with adherents
-  WITHOUT_ADHERENTS: "without_adherents", // Activities without adherents (internal meetings, etc.)
+  WITH_ADHERENTS: "with_adherents",
+  WITHOUT_ADHERENTS: "without_adherents", 
+  BR: "br"
 };
 
 class Activity {
@@ -19,11 +20,10 @@ class Activity {
       transportCapacity,
       isPaid,
       price,
-      recurringActivityId, // New field
+      recurringActivityId,
       createdBy,
     } = activityData;
 
-    // Insert activity into database
     const query = `
       INSERT INTO activities (
         title, 
@@ -259,7 +259,6 @@ class Activity {
       throw new Error("User is already a participant of this activity");
     }
 
-    // Check if activity exists and has space
     const activityQuery = `
       SELECT 
         a.*,
@@ -283,7 +282,6 @@ class Activity {
       throw new Error("Activity is already at maximum capacity");
     }
 
-    // Add participant
     const insertQuery = `
       INSERT INTO activity_participants (activity_id, user_id, needs_transport) 
       VALUES ($1, $2, $3) 
@@ -299,12 +297,6 @@ class Activity {
     return rows[0];
   }
 
-  /**
-   * Remove participant from activity
-   * @param {number} activityId - Activity ID
-   * @param {number} userId - User ID
-   * @returns {Promise<boolean>} Success flag
-   */
   static async removeParticipant(activityId, userId) {
     const query =
       "DELETE FROM activity_participants WHERE activity_id = $1 AND user_id = $2 RETURNING id";
@@ -313,11 +305,6 @@ class Activity {
     return rows.length > 0;
   }
 
-  /**
-   * Get participants for an activity
-   * @param {number} activityId - Activity ID
-   * @returns {Promise<Array>} Participants
-   */
   static async getParticipants(activityId) {
     const query = `
       SELECT 
@@ -340,14 +327,7 @@ class Activity {
     return rows;
   }
 
-  /**
-   * Add accompagnateur to activity
-   * @param {number} activityId - Activity ID
-   * @param {number} userId - User ID
-   * @returns {Promise<Object>} Accompagnateur data
-   */
   static async addAccompagnateur(activityId, userId) {
-    // Check if already an accompagnateur
     const checkQuery =
       "SELECT * FROM activity_accompagnateurs WHERE activity_id = $1 AND user_id = $2";
     const { rows: checkRows } = await db.query(checkQuery, [
@@ -359,7 +339,6 @@ class Activity {
       throw new Error("User is already an accompagnateur of this activity");
     }
 
-    // Check if user is an accompagnateur
     const userQuery = "SELECT * FROM users WHERE id = $1 AND role = $2";
     const { rows: userRows } = await db.query(userQuery, [
       userId,
@@ -370,7 +349,6 @@ class Activity {
       throw new Error("User is not an accompagnateur");
     }
 
-    // Add accompagnateur
     const insertQuery = `
       INSERT INTO activity_accompagnateurs (activity_id, user_id) 
       VALUES ($1, $2) 
@@ -382,12 +360,6 @@ class Activity {
     return rows[0];
   }
 
-  /**
-   * Remove accompagnateur from activity
-   * @param {number} activityId - Activity ID
-   * @param {number} userId - User ID
-   * @returns {Promise<boolean>} Success flag
-   */
   static async removeAccompagnateur(activityId, userId) {
     const query =
       "DELETE FROM activity_accompagnateurs WHERE activity_id = $1 AND user_id = $2 RETURNING id";
@@ -396,11 +368,6 @@ class Activity {
     return rows.length > 0;
   }
 
-  /**
-   * Get accompagnateurs for an activity
-   * @param {number} activityId - Activity ID
-   * @returns {Promise<Array>} Accompagnateurs
-   */
   static async getAccompagnateurs(activityId) {
     const query = `
       SELECT 

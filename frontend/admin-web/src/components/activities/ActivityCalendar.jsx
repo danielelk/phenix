@@ -20,55 +20,54 @@ import {
   FiClock,
   FiMapPin,
   FiBriefcase,
+  FiTrash2,
+  FiUserCheck,
 } from "react-icons/fi";
 import { MdOutlineEuroSymbol } from "react-icons/md";
 import ActivityParticipants from "./ActivityParticipants";
+import ActivityAccompagnateurs from "./ActivityAccompagnateurs";
 
 const ActivityCalendar = ({
   activities,
   onEditActivity,
+  onDeleteActivity,
   currentDate,
   onMonthChange,
   onParticipantsChanged,
 }) => {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showAccompagnateurs, setShowAccompagnateurs] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Navigate to previous month
   const previousMonth = () => {
     onMonthChange(subMonths(currentDate, 1));
   };
 
-  // Navigate to next month
   const nextMonth = () => {
     onMonthChange(addMonths(currentDate, 1));
   };
 
-  // Navigate to today
   const goToToday = () => {
     onMonthChange(new Date());
   };
 
-  // Get days in the current month
   const getDaysInMonth = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     return eachDayOfInterval({ start: monthStart, end: monthEnd });
   };
 
-  // Get the day of the week for the first day of the month (0 for Sunday, 6 for Saturday)
   const getFirstDayOfMonth = () => {
     return startOfMonth(currentDate).getDay();
   };
 
-  // Get activities for a specific day
   const getActivitiesForDay = (day) => {
     return activities.filter((activity) =>
       isSameDay(parseISO(activity.start_date), day)
     );
   };
 
-  // Get CSS class based on activity type
   const getActivityTypeClass = (activityType) => {
     switch(activityType) {
       case "with_adherents":
@@ -82,7 +81,6 @@ const ActivityCalendar = ({
     }
   };
 
-  // Render activity item
   const renderActivity = (activity) => {
     const typeClass = getActivityTypeClass(activity.type);
 
@@ -100,21 +98,44 @@ const ActivityCalendar = ({
     );
   };
 
-  // Handle participants management
   const handleManageParticipants = () => {
     if (selectedActivity && selectedActivity.type === "with_adherents") {
       setShowParticipants(true);
     }
   };
 
-  // Handle participants changed
-  const handleParticipantsChanged = () => {
-    if (onParticipantsChanged) {
-      onParticipantsChanged();
+  const handleManageAccompagnateurs = () => {
+    if (selectedActivity) {
+      setShowAccompagnateurs(true);
     }
   };
 
-  // Get display text for activity type
+  const handleParticipantsChanged = () => {
+    // Don't trigger a full refresh from parent, just update the selected activity data locally
+    if (selectedActivity && onParticipantsChanged) {
+      // We'll fetch the updated activity data locally instead of triggering a full page refresh
+      onParticipantsChanged(selectedActivity.id);
+    }
+  };
+
+  const handleDeleteActivity = () => {
+    if (selectedActivity) {
+      setDeleteConfirm(selectedActivity);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirm && onDeleteActivity) {
+      await onDeleteActivity(deleteConfirm.id);
+      setDeleteConfirm(null);
+      setSelectedActivity(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
+  };
+
   const getActivityTypeText = (type) => {
     switch(type) {
       case "with_adherents":
@@ -150,11 +171,25 @@ const ActivityCalendar = ({
               </button>
             )}
             <button
+              className={styles.accompagnateursButton}
+              onClick={handleManageAccompagnateurs}
+            >
+              <FiUserCheck size={16} />
+              <span>Accompagnateurs</span>
+            </button>
+            <button
               className={styles.editButton}
               onClick={() => onEditActivity(selectedActivity)}
             >
               <FiEdit size={16} />
               <span>Modifier</span>
+            </button>
+            <button
+              className={styles.deleteButton}
+              onClick={handleDeleteActivity}
+            >
+              <FiTrash2 size={16} />
+              <span>Supprimer</span>
             </button>
           </div>
         </div>
@@ -228,29 +263,23 @@ const ActivityCalendar = ({
     );
   };
 
-  // Render calendar grid
   const renderCalendar = () => {
     const days = getDaysInMonth();
     const firstDayOfMonth = getFirstDayOfMonth();
-
-    // Array of day names
     const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
     return (
       <div className={styles.calendarGrid}>
-        {/* Day names row */}
         {dayNames.map((day, index) => (
           <div key={day} className={styles.dayName}>
             {day}
           </div>
         ))}
 
-        {/* Empty cells for days before the first day of the month */}
         {Array.from({ length: firstDayOfMonth }).map((_, index) => (
           <div key={`empty-${index}`} className={styles.emptyDay}></div>
         ))}
 
-        {/* Calendar days */}
         {days.map((day) => {
           const dayActivities = getActivitiesForDay(day);
           const isCurrentDay = isToday(day);
@@ -336,6 +365,41 @@ const ActivityCalendar = ({
                 onClose={() => setShowParticipants(false)}
                 onUpdate={handleParticipantsChanged}
               />
+            </div>
+          </div>
+        )}
+
+        {showAccompagnateurs && selectedActivity && (
+          <div className={styles.participantsOverlay}>
+            <div className={styles.participantsContainer}>
+              <ActivityAccompagnateurs
+                activity={selectedActivity}
+                onClose={() => setShowAccompagnateurs(false)}
+                onUpdate={handleParticipantsChanged}
+              />
+            </div>
+          </div>
+        )}
+
+        {deleteConfirm && (
+          <div className={styles.deleteOverlay}>
+            <div className={styles.deleteDialog}>
+              <h3>Confirmer la suppression</h3>
+              <p>
+                Êtes-vous sûr de vouloir supprimer l'activité "{deleteConfirm.title}" ?
+              </p>
+              <p className={styles.deleteWarning}>
+                Cette action est irréversible et supprimera également tous les participants
+                et accompagnateurs associés à cette activité.
+              </p>
+              <div className={styles.deleteActions}>
+                <button className={styles.cancelButton} onClick={cancelDelete}>
+                  Annuler
+                </button>
+                <button className={styles.confirmButton} onClick={confirmDelete}>
+                  Supprimer
+                </button>
+              </div>
             </div>
           </div>
         )}

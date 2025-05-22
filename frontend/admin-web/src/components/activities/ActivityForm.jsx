@@ -106,20 +106,23 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
       return false;
     }
 
-    if (
-      formData.transportAvailable &&
-      (!formData.transportCapacity || parseInt(formData.transportCapacity) < 1)
-    ) {
-      toast.error("La capacité de transport doit être au moins 1");
-      return false;
-    }
+    // Only validate transport and payment for activities with adherents
+    if (formData.type === "with_adherents") {
+      if (
+        formData.transportAvailable &&
+        (!formData.transportCapacity || parseInt(formData.transportCapacity) < 1)
+      ) {
+        toast.error("La capacité de transport doit être au moins 1");
+        return false;
+      }
 
-    if (
-      formData.isPaid &&
-      (!formData.price || parseFloat(formData.price) <= 0)
-    ) {
-      toast.error("Le prix doit être supérieur à 0");
-      return false;
+      if (
+        formData.isPaid &&
+        (!formData.price || parseFloat(formData.price) <= 0)
+      ) {
+        toast.error("Le prix doit être supérieur à 0");
+        return false;
+      }
     }
 
     return true;
@@ -144,14 +147,16 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
         maxParticipants: formData.maxParticipants
           ? parseInt(formData.maxParticipants)
           : null,
-        transportAvailable: formData.transportAvailable,
+        transportAvailable: formData.type === "with_adherents" ? formData.transportAvailable : false,
         transportCapacity:
-          formData.transportAvailable && formData.transportCapacity
+          formData.type === "with_adherents" && formData.transportAvailable && formData.transportCapacity
             ? parseInt(formData.transportCapacity)
             : 0,
-        isPaid: formData.isPaid,
+        isPaid: formData.type === "with_adherents" ? formData.isPaid : false,
         price:
-          formData.isPaid && formData.price ? parseFloat(formData.price) : 0,
+          formData.type === "with_adherents" && formData.isPaid && formData.price 
+            ? parseFloat(formData.price) 
+            : 0,
       };
 
       onSubmit(activityData);

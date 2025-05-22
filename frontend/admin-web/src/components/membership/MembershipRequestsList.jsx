@@ -29,8 +29,14 @@ const MembershipRequestsList = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
+      console.log("Fetching membership requests...");
       const response = await membershipService.getMembershipRequests();
-      setRequests(response.data.requests || []);
+      console.log("API Response:", response);
+      
+      const requestsData = response.data?.membershipRequests || response.membershipRequests || [];
+      console.log("Requests data:", requestsData);
+      
+      setRequests(requestsData);
     } catch (error) {
       console.error("Erreur lors du chargement des demandes:", error);
       toast.error("Erreur lors du chargement des demandes d'adhésion");
@@ -121,7 +127,7 @@ const MembershipRequestsList = () => {
       ) : requests.length === 0 ? (
         <div className={styles.emptyState}>
           <FiAlertCircle size={40} />
-          <p>Aucune demande d'adhésion en attente</p>
+          <p>Aucune demande d'adhésion trouvée</p>
         </div>
       ) : (
         <div className={styles.requestsList}>
