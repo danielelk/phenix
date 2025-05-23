@@ -11,6 +11,14 @@ const {
   addAccompagnateur,
   removeAccompagnateur,
 } = require("../controllers/activityController");
+const {
+  startActivity,
+  completeActivity,
+  savePresence,
+  getExpenses,
+  addExpense,
+  deleteExpense,
+} = require("../controllers/activityMobileController");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
 const { userRoles } = require("../models/User");
 
@@ -30,6 +38,22 @@ router
   .get(getActivityById)
   .patch(restrictTo(userRoles.ADMIN, userRoles.ACCOMPAGNATEUR), updateActivity)
   .delete(restrictTo(userRoles.ADMIN), deleteActivity);
+
+// Mobile endpoints
+router.post("/:id/start", restrictTo(userRoles.ACCOMPAGNATEUR), startActivity);
+router.post("/:id/complete", restrictTo(userRoles.ACCOMPAGNATEUR), completeActivity);
+router.post("/:id/presence", restrictTo(userRoles.ACCOMPAGNATEUR), savePresence);
+
+router
+  .route("/:id/expenses")
+  .get(getExpenses)
+  .post(restrictTo(userRoles.ACCOMPAGNATEUR), addExpense);
+
+router.delete(
+  "/:id/expenses/:expenseId",
+  restrictTo(userRoles.ACCOMPAGNATEUR),
+  deleteExpense
+);
 
 router
   .route("/:id/participants")
