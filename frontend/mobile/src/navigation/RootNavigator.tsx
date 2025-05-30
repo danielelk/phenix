@@ -5,12 +5,12 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import MainNavigator from './MainNavigator';
 import LoadingScreen from '../screens/LoadingScreen';
 
-export type RootStackParamList = {
+export type AuthStackParamList = {
   Login: undefined;
   Main: undefined;
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<AuthStackParamList>();
 
 const RootNavigator = () => {
   const { user, loading } = useAuth();

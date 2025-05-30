@@ -1,22 +1,34 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import PlanningScreen from '../screens/planning/PlanningScreen';
-import ActivitiesScreen from '../screens/activities/ActivitiesScreen';
 import AdherentsScreen from '../screens/adherents/AdherentsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import ActivityDetailScreen from '../screens/activities/ActivityDetailScreen';
+import ActivityPresenceScreen from '../screens/activities/ActivityPresenceScreen';
+import ActivityExpensesScreen from '../screens/activities/ActivityExpensesScreen';
+import ParticipantDetailsScreen from '../screens/adherents/ParticipantDetailsScreen';
 import { colors } from '../styles/theme';
 
 export type MainTabParamList = {
-  Planning: undefined;
-  Activities: undefined;
-  Adherents: undefined;
-  Profile: undefined;
+  PlanningTab: undefined;
+  AdherentsTab: undefined;
+  ProfileTab: undefined;
+};
+
+export type RootStackParamList = {
+  MainTabs: undefined;
+  ActivityDetail: { activityId: number };
+  ActivityPresence: { activityId: number; participants: any[] };
+  ActivityExpenses: { activityId: number };
+  ParticipantDetails: { participant: any };
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
-const MainNavigator = () => {
+const MainTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -33,7 +45,7 @@ const MainNavigator = () => {
       }}
     >
       <Tab.Screen
-        name="Planning"
+        name="PlanningTab"
         component={PlanningScreen}
         options={{
           title: 'Planning',
@@ -43,17 +55,7 @@ const MainNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Activities"
-        component={ActivitiesScreen}
-        options={{
-          title: 'Activités',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="run" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Adherents"
+        name="AdherentsTab"
         component={AdherentsScreen}
         options={{
           title: 'Adhérents',
@@ -63,7 +65,7 @@ const MainNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Profile"
+        name="ProfileTab"
         component={ProfileScreen}
         options={{
           title: 'Profil',
@@ -73,6 +75,45 @@ const MainNavigator = () => {
         }}
       />
     </Tab.Navigator>
+  );
+};
+
+const MainNavigator = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.backgroundLight,
+      }}
+    >
+      <Stack.Screen 
+        name="MainTabs" 
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ActivityDetail" 
+        component={ActivityDetailScreen}
+        options={{ title: 'Détails de l\'activité' }}
+      />
+      <Stack.Screen 
+        name="ActivityPresence" 
+        component={ActivityPresenceScreen}
+        options={{ title: 'Gestion de la présence' }}
+      />
+      <Stack.Screen 
+        name="ActivityExpenses" 
+        component={ActivityExpensesScreen}
+        options={{ title: 'Gestion des dépenses' }}
+      />
+      <Stack.Screen 
+        name="ParticipantDetails" 
+        component={ParticipantDetailsScreen}
+        options={{ title: 'Détails de l\'adhérent' }}
+      />
+    </Stack.Navigator>
   );
 };
 
