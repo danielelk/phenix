@@ -9,9 +9,10 @@ import {
 } from 'react-native';
 import { Card, FAB } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { format, addDays, startOfWeek, parseISO } from 'date-fns';
+import { format, addDays, startOfWeek, parseISO, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../contexts/AuthContext';
 import { colors, spacing, fonts } from '../../styles/theme';
 import api from '../../services/api';
 
@@ -28,12 +29,39 @@ interface Activity {
   transport_capacity?: number;
 }
 
+const getActivityColor = (type: string) => {
+  switch (type) {
+    case 'with_adherents':
+      return colors.primary;
+    case 'without_adherents':
+      return colors.secondary;
+    case 'br':
+      return colors.danger;
+    default:
+      return colors.textMuted;
+  }
+};
+
+const getActivityTypeLabel = (type: string) => {
+  switch (type) {
+    case 'with_adherents':
+      return 'Avec adhérents';
+    case 'without_adherents':
+      return 'Sans adhérents';
+    case 'br':
+      return 'Bureau Restreint';
+    default:
+      return type;
+  }
+};
+
 const PlanningScreen = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(0);
   const navigation = useNavigation();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchActivities();
@@ -41,13 +69,14 @@ const PlanningScreen = () => {
 
   const fetchActivities = async () => {
     try {
-      const startDate = startOfWeek(addDays(new Date(), selectedWeek * 7), { locale: fr });
-      const endDate = addDays(startDate, 13);
+      const startDate = startOfWeek(addWeeks(new Date(), selectedWeek), { locale: fr });
+      const endDate = addDays(startDate, 6); // Only 7 days (one week)
 
       const response = await api.get('/activities/calendar', {
         params: {
           startDate: format(startDate, 'yyyy-MM-dd'),
           endDate: format(endDate, 'yyyy-MM-dd'),
+          accompagnateurId: user?.id, // Filter by current user
         },
       });
 
@@ -82,13 +111,14 @@ const PlanningScreen = () => {
   const renderActivity = (activity: Activity) => {
     const startTime = format(parseISO(activity.start_date), 'HH:mm');
     const endTime = format(parseISO(activity.end_date), 'HH:mm');
+    const activityColor = getActivityColor(activity.type);
 
     return (
       <TouchableOpacity
         key={activity.id}
         onPress={() => navigation.navigate('ActivityDetail', { activityId: activity.id })}
       >
-        <Card style={styles.activityCard}>
+        <Card style={[styles.activityCard, { borderLeftColor: activityColor }]}>
           <Card.Content>
             <View style={styles.activityHeader}>
               <Text style={styles.activityTitle}>{activity.title}</Text>
@@ -99,6 +129,12 @@ const PlanningScreen = () => {
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="map-marker" size={16} color={colors.textLight} />
                 <Text style={styles.infoText}>{activity.location}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <View style={[styles.typeBadge, { backgroundColor: activityColor }]}>
+                  <Text style={styles.typeText}>{getActivityTypeLabel(activity.type)}</Text>
+                </View>
               </View>
               
               {activity.type === 'with_adherents' && (
@@ -127,7 +163,13 @@ const PlanningScreen = () => {
   };
 
   const groupedActivities = groupActivitiesByDay();
-  const weekStart = startOfWeek(addDays(new Date(), selectedWeek * 7), { locale: fr });
+  const weekStart = startOfWeek(addWeeks(new Date(), selectedWeek), { locale: fr });
+
+  const getWeekTitle = () => {
+    if (selectedWeek === 0) return 'Cette semaine';
+    if (selectedWeek === 1) return 'Semaine prochaine';
+    return format(weekStart, "'Semaine du' d MMMM", { locale: fr });
+  };
 
   return (
     <View style={styles.container}>
@@ -139,10 +181,7 @@ const PlanningScreen = () => {
           <MaterialCommunityIcons name="chevron-left" size={24} color={colors.primary} />
         </TouchableOpacity>
         
-        <Text style={styles.weekText}>
-          {selectedWeek === 0 ? 'Cette semaine' : selectedWeek === 1 ? 'Semaine prochaine' : 
-           format(weekStart, "'Semaine du' d MMMM", { locale: fr })}
-        </Text>
+        <Text style={styles.weekText}>{getWeekTitle()}</Text>
         
         <TouchableOpacity
           onPress={() => setSelectedWeek(selectedWeek + 1)}
@@ -158,7 +197,7 @@ const PlanningScreen = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {[...Array(14)].map((_, index) => {
+        {[...Array(7)].map((_, index) => {
           const currentDate = addDays(weekStart, index);
           const dateKey = format(currentDate, 'yyyy-MM-dd');
           const dayActivities = groupedActivities[dateKey] || [];
@@ -220,6 +259,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     backgroundColor: colors.backgroundLight,
+    borderLeftWidth: 4,
   },
   activityHeader: {
     flexDirection: 'row',
@@ -249,6 +289,16 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: fonts.sm,
     color: colors.textLight,
+  },
+  typeBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  typeText: {
+    fontSize: fonts.sm,
+    color: colors.backgroundLight,
+    fontWeight: '600',
   },
   noActivities: {
     fontSize: fonts.sm,

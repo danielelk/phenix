@@ -35,12 +35,15 @@ const Activities = () => {
         params.type = filterType;
       }
 
+      console.log("Fetching activities for date range:", formattedStartDate, "to", formattedEndDate);
+
       const response = await activityService.getActivitiesByDateRange(
         formattedStartDate,
         formattedEndDate,
         params
       );
 
+      console.log("Activities response:", response);
       setActivities(response.data.activities || []);
     } catch (error) {
       console.error("Error fetching activities:", error);
@@ -52,19 +55,26 @@ const Activities = () => {
 
   const handleActivitySubmit = async (activityData) => {
     try {
+      console.log("Submitting activity:", activityData);
+
       if (currentActivity) {
+        console.log("Updating existing activity:", currentActivity.id);
         await activityService.updateActivity(currentActivity.id, activityData);
         toast.success("Activité mise à jour avec succès");
       } else {
-        await activityService.createActivity(activityData);
+        console.log("Creating new activity");
+        const response = await activityService.createActivity(activityData);
+        console.log("Activity creation response:", response);
         toast.success("Activité créée avec succès");
       }
 
       setShowForm(false);
-      fetchActivities();
+      setCurrentActivity(null);
+      await fetchActivities();
     } catch (error) {
       console.error("Error saving activity:", error);
-      toast.error("Erreur lors de l'enregistrement de l'activité");
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de l'enregistrement de l'activité";
+      toast.error(errorMessage);
     }
   };
 
@@ -79,10 +89,14 @@ const Activities = () => {
   };
 
   const handleDeleteActivity = async (activityId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette activité ?")) {
+      return;
+    }
+
     try {
       await activityService.deleteActivity(activityId);
       toast.success("Activité supprimée avec succès");
-      fetchActivities();
+      await fetchActivities();
     } catch (error) {
       console.error("Error deleting activity:", error);
       toast.error("Erreur lors de la suppression de l'activité");
@@ -98,12 +112,10 @@ const Activities = () => {
   };
 
   const handleParticipantsChanged = async (activityId) => {
-    // Update only the specific activity in the list instead of refetching everything
     try {
       const updatedActivityResponse = await activityService.getActivityById(activityId);
       const updatedActivity = updatedActivityResponse.data.activity;
       
-      // Update the activities list with the new participant count
       setActivities(prevActivities => 
         prevActivities.map(activity => 
           activity.id === activityId 
@@ -113,9 +125,13 @@ const Activities = () => {
       );
     } catch (error) {
       console.error("Error updating activity data:", error);
-      // If there's an error, fall back to full refresh
-      fetchActivities();
+      await fetchActivities();
     }
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setCurrentActivity(null);
   };
 
   return (
@@ -196,7 +212,7 @@ const Activities = () => {
             <ActivityForm
               activity={currentActivity}
               onSubmit={handleActivitySubmit}
-              onCancel={() => setShowForm(false)}
+              onCancel={handleCancelForm}
             />
           </div>
         </div>

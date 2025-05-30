@@ -5,16 +5,17 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { 
   Card, 
   Button, 
   FAB, 
-  Checkbox, 
   TextInput,
   Portal,
   Modal,
-  List
+  List,
+  Chip
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -32,6 +33,7 @@ interface ManualParticipant {
   first_name: string;
   last_name: string;
   phone?: string;
+  present: boolean;
   temporary: boolean;
 }
 
@@ -110,13 +112,11 @@ const ActivityPresenceScreen = () => {
   const savePresence = async () => {
     setSaving(true);
     try {
-      // Save regular participants presence
       const presenceData = participants.map(p => ({
         userId: p.id,
         present: p.present || false,
       }));
 
-      // Add manual participants
       const manualData = manualParticipants.map(p => ({
         firstName: p.first_name,
         lastName: p.last_name,
@@ -143,6 +143,87 @@ const ActivityPresenceScreen = () => {
                       manualParticipants.filter(p => p.present).length;
   const totalCount = participants.length + manualParticipants.length;
 
+  const renderParticipant = (participant: Participant) => (
+    <TouchableOpacity
+      key={participant.id}
+      onPress={() => togglePresence(participant.id)}
+      style={[
+        styles.participantItem,
+        participant.present && styles.participantItemPresent
+      ]}
+    >
+      <View style={styles.participantInfo}>
+        <Text style={[
+          styles.participantName,
+          participant.present && styles.participantNamePresent
+        ]}>
+          {participant.last_name} {participant.first_name}
+        </Text>
+        <Chip 
+          mode={participant.present ? 'flat' : 'outlined'}
+          style={[
+            styles.statusChip,
+            participant.present ? styles.presentChip : styles.absentChip
+          ]}
+          textStyle={[
+            styles.statusChipText,
+            participant.present ? styles.presentChipText : styles.absentChipText
+          ]}
+        >
+          {participant.present ? 'Présent' : 'Absent'}
+        </Chip>
+      </View>
+      <MaterialCommunityIcons 
+        name={participant.present ? "account-check" : "account-outline"} 
+        size={24} 
+        color={participant.present ? colors.success : colors.textMuted} 
+      />
+    </TouchableOpacity>
+  );
+
+  const renderManualParticipant = (participant: ManualParticipant, index: number) => (
+    <TouchableOpacity
+      key={index}
+      onPress={() => toggleManualPresence(index)}
+      style={[
+        styles.participantItem,
+        participant.present && styles.participantItemPresent
+      ]}
+    >
+      <View style={styles.participantInfo}>
+        <Text style={[
+          styles.participantName,
+          participant.present && styles.participantNamePresent
+        ]}>
+          {participant.last_name} {participant.first_name}
+        </Text>
+        {participant.phone && (
+          <Text style={styles.participantPhone}>{participant.phone}</Text>
+        )}
+        <Chip 
+          mode={participant.present ? 'flat' : 'outlined'}
+          style={[
+            styles.statusChip,
+            participant.present ? styles.presentChip : styles.absentChip
+          ]}
+          textStyle={[
+            styles.statusChipText,
+            participant.present ? styles.presentChipText : styles.absentChipText
+          ]}
+        >
+          {participant.present ? 'Présent' : 'Absent'}
+        </Chip>
+      </View>
+      <TouchableOpacity onPress={() => removeManualParticipant(index)}>
+        <MaterialCommunityIcons
+          name="close-circle"
+          size={24}
+          color={colors.danger}
+        />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Card style={styles.summaryCard}>
@@ -163,20 +244,7 @@ const ActivityPresenceScreen = () => {
             titleStyle={styles.cardTitle}
           />
           <Card.Content>
-            {participants.map((participant) => (
-              <List.Item
-                key={participant.id}
-                title={`${participant.last_name} ${participant.first_name}`}
-                left={() => (
-                  <Checkbox
-                    status={participant.present ? 'checked' : 'unchecked'}
-                    onPress={() => togglePresence(participant.id)}
-                    color={colors.primary}
-                  />
-                )}
-                style={styles.listItem}
-              />
-            ))}
+            {participants.map(renderParticipant)}
           </Card.Content>
         </Card>
 
@@ -187,29 +255,7 @@ const ActivityPresenceScreen = () => {
               titleStyle={styles.cardTitle}
             />
             <Card.Content>
-              {manualParticipants.map((participant, index) => (
-                <List.Item
-                  key={index}
-                  title={`${participant.last_name} ${participant.first_name}`}
-                  description={participant.phone}
-                  left={() => (
-                    <Checkbox
-                      status={participant.present ? 'checked' : 'unchecked'}
-                      onPress={() => toggleManualPresence(index)}
-                      color={colors.primary}
-                    />
-                  )}
-                  right={() => (
-                    <MaterialCommunityIcons
-                      name="close-circle"
-                      size={24}
-                      color={colors.danger}
-                      onPress={() => removeManualParticipant(index)}
-                    />
-                  )}
-                  style={styles.listItem}
-                />
-              ))}
+              {manualParticipants.map(renderManualParticipant)}
             </Card.Content>
           </Card>
         )}
@@ -329,10 +375,59 @@ const styles = StyleSheet.create({
     fontSize: fonts.md,
     fontWeight: '600',
   },
-  listItem: {
-    paddingVertical: spacing.xs,
+  participantItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    borderRadius: 8,
+    marginBottom: spacing.xs,
+  },
+  participantItemPresent: {
+    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+    borderColor: colors.success,
+  },
+  participantInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  participantName: {
+    fontSize: fonts.md,
+    color: colors.text,
+    flex: 1,
+  },
+  participantNamePresent: {
+    fontWeight: '600',
+  },
+  participantPhone: {
+    fontSize: fonts.sm,
+    color: colors.textLight,
+    marginTop: spacing.xs,
+  },
+  statusChip: {
+    height: 28,
+    marginLeft: spacing.sm,
+  },
+  statusChipText: {
+    fontSize: fonts.sm,
+  },
+  presentChip: {
+    backgroundColor: colors.success,
+  },
+  presentChipText: {
+    color: colors.backgroundLight,
+  },
+  absentChip: {
+    backgroundColor: 'transparent',
+    borderColor: colors.textMuted,
+  },
+  absentChipText: {
+    color: colors.textMuted,
   },
   bottomPadding: {
     height: 100,

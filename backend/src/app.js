@@ -11,8 +11,7 @@ const activityRoutes = require("./routes/activityRoutes");
 const recurringActivityRoutes = require("./routes/recurringActivityRoutes");
 const formuleRoutes = require("./routes/formuleRoutes");
 const membershipRequestRoutes = require("./routes/membershipRequestRoutes");
-const { migrate } = require('node-pg-migrate');
-const path = require('path');
+const logger = require("./utils/logger");
 
 const app = express();
 
@@ -39,20 +38,29 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Register routes
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  logger.info(`[${timestamp}] ${req.method} ${req.path} - Body:`, req.body);
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/recurring-activities", recurringActivityRoutes);
-app.use("/api/formules", formuleRoutes); // Add this line
-app.use("/api/membership-requests", membershipRequestRoutes); // Add this line
-// Add any other route registrations you might need here
+app.use("/api/formules", formuleRoutes);
+app.use("/api/membership-requests", membershipRequestRoutes);
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json({ 
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 app.all("*", (req, res) => {
+  logger.warn(`Route not found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     status: "fail",
     message: `Route ${req.originalUrl} not found`,

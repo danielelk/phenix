@@ -1,10 +1,6 @@
 const { Activity, activityTypes } = require("../models/Activity");
 const logger = require("../utils/logger");
 
-/**
- * Get all activities with pagination and filtering
- * @route GET /api/activities
- */
 exports.getActivities = async (req, res) => {
   try {
     const { page, limit, type, search, sortBy, sortOrder, upcoming } =
@@ -36,10 +32,6 @@ exports.getActivities = async (req, res) => {
   }
 };
 
-/**
- * Get activities by date range
- * @route GET /api/activities/calendar
- */
 exports.getActivitiesByDateRange = async (req, res) => {
   try {
     const { startDate, endDate, type, accompagnateurId } = req.query;
@@ -72,10 +64,6 @@ exports.getActivitiesByDateRange = async (req, res) => {
   }
 };
 
-/**
- * Get activity by ID
- * @route GET /api/activities/:id
- */
 exports.getActivityById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -111,6 +99,8 @@ exports.getActivityById = async (req, res) => {
 
 exports.createActivity = async (req, res) => {
   try {
+    logger.info("Create activity request received:", req.body);
+
     const {
       title,
       description,
@@ -125,7 +115,34 @@ exports.createActivity = async (req, res) => {
       price,
     } = req.body;
 
-    // Validate activity type
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Title is required",
+      });
+    }
+
+    if (!startDate) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Start date is required",
+      });
+    }
+
+    if (!endDate) {
+      return res.status(400).json({
+        status: "fail",
+        message: "End date is required",
+      });
+    }
+
+    if (!location || !location.trim()) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Location is required",
+      });
+    }
+
     if (!Object.values(activityTypes).includes(type)) {
       return res.status(400).json({
         status: "fail",
@@ -133,23 +150,44 @@ exports.createActivity = async (req, res) => {
       });
     }
 
-    // Create new activity
-    const newActivity = await Activity.create({
-      title,
-      description,
-      startDate,
-      endDate,
-      location,
-      type,
-      maxParticipants: maxParticipants || null,
-      transportAvailable: transportAvailable || false,
-      transportCapacity: transportAvailable ? transportCapacity || 0 : 0,
-      isPaid: isPaid || false,
-      price: isPaid ? price || 0 : 0,
-      createdBy: req.user.id,
-    });
+    const parsedStartDate = new Date(startDate);
+    const parsedEndDate = new Date(endDate);
 
-    // Send response
+    if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Invalid date format",
+      });
+    }
+
+    if (parsedEndDate <= parsedStartDate) {
+      return res.status(400).json({
+        status: "fail",
+        message: "End date must be after start date",
+      });
+    }
+
+    const activityData = {
+      title: title.trim(),
+      description: description?.trim() || null,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+      location: location.trim(),
+      type,
+      maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
+      transportAvailable: Boolean(transportAvailable),
+      transportCapacity: transportAvailable ? parseInt(transportCapacity) || 0 : 0,
+      isPaid: Boolean(isPaid),
+      price: isPaid ? parseFloat(price) || 0 : 0,
+      createdBy: req.user.id,
+    };
+
+    logger.info("Creating activity with data:", activityData);
+
+    const newActivity = await Activity.create(activityData);
+
+    logger.info("Activity created successfully:", newActivity);
+
     res.status(201).json({
       status: "success",
       data: {
@@ -164,8 +202,6 @@ exports.createActivity = async (req, res) => {
     });
   }
 };
-
-// And update the updateActivity function
 
 exports.updateActivity = async (req, res) => {
   try {
@@ -184,7 +220,6 @@ exports.updateActivity = async (req, res) => {
       price,
     } = req.body;
 
-    // Check if activity exists
     const existingActivity = await Activity.findById(id);
 
     if (!existingActivity) {
@@ -194,7 +229,6 @@ exports.updateActivity = async (req, res) => {
       });
     }
 
-    // Validate activity type if provided
     if (type && !Object.values(activityTypes).includes(type)) {
       return res.status(400).json({
         status: "fail",
@@ -202,22 +236,33 @@ exports.updateActivity = async (req, res) => {
       });
     }
 
-    // Update activity
-    const updatedActivity = await Activity.update(id, {
-      title,
-      description,
-      startDate,
-      endDate,
-      location,
-      type,
-      maxParticipants,
-      transportAvailable,
-      transportCapacity,
-      isPaid,
-      price,
-    });
+    if (startDate && endDate) {
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
 
-    // Send response
+      if (parsedEndDate <= parsedStartDate) {
+        return res.status(400).json({
+          status: "fail",
+          message: "End date must be after start date",
+        });
+      }
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (startDate !== undefined) updateData.startDate = new Date(startDate);
+    if (endDate !== undefined) updateData.endDate = new Date(endDate);
+    if (location !== undefined) updateData.location = location;
+    if (type !== undefined) updateData.type = type;
+    if (maxParticipants !== undefined) updateData.maxParticipants = maxParticipants ? parseInt(maxParticipants) : null;
+    if (transportAvailable !== undefined) updateData.transportAvailable = Boolean(transportAvailable);
+    if (transportCapacity !== undefined) updateData.transportCapacity = parseInt(transportCapacity) || 0;
+    if (isPaid !== undefined) updateData.isPaid = Boolean(isPaid);
+    if (price !== undefined) updateData.price = parseFloat(price) || 0;
+
+    const updatedActivity = await Activity.update(id, updateData);
+
     res.status(200).json({
       status: "success",
       data: {
@@ -233,10 +278,6 @@ exports.updateActivity = async (req, res) => {
   }
 };
 
-/**
- * Delete activity
- * @route DELETE /api/activities/:id
- */
 exports.deleteActivity = async (req, res) => {
   try {
     const { id } = req.params;
@@ -269,10 +310,6 @@ exports.deleteActivity = async (req, res) => {
   }
 };
 
-/**
- * Add participant to activity
- * @route POST /api/activities/:id/participants
- */
 exports.addParticipant = async (req, res) => {
   try {
     const { id } = req.params;
@@ -306,10 +343,6 @@ exports.addParticipant = async (req, res) => {
   }
 };
 
-/**
- * Remove participant from activity
- * @route DELETE /api/activities/:id/participants/:userId
- */
 exports.removeParticipant = async (req, res) => {
   try {
     const { id, userId } = req.params;
@@ -333,10 +366,6 @@ exports.removeParticipant = async (req, res) => {
   }
 };
 
-/**
- * Add accompagnateur to activity
- * @route POST /api/activities/:id/accompagnateurs
- */
 exports.addAccompagnateur = async (req, res) => {
   try {
     const { id } = req.params;
@@ -366,10 +395,6 @@ exports.addAccompagnateur = async (req, res) => {
   }
 };
 
-/**
- * Remove accompagnateur from activity
- * @route DELETE /api/activities/:id/accompagnateurs/:userId
- */
 exports.removeAccompagnateur = async (req, res) => {
   try {
     const { id, userId } = req.params;

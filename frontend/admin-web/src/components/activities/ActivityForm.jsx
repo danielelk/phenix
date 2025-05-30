@@ -21,6 +21,8 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
     price: "",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (activity) {
       const startDate = parseISO(activity.start_date);
@@ -106,7 +108,6 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
       return false;
     }
 
-    // Only validate transport and payment for activities with adherents
     if (formData.type === "with_adherents") {
       if (
         formData.transportAvailable &&
@@ -128,21 +129,31 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validateForm()) {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
       const startDateTime = new Date(
         `${formData.startDate}T${formData.startTime}`
       );
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
       const activityData = {
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim() || null,
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
-        location: formData.location,
+        location: formData.location.trim(),
         type: formData.type,
         maxParticipants: formData.maxParticipants
           ? parseInt(formData.maxParticipants)
@@ -159,7 +170,13 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             : 0,
       };
 
-      onSubmit(activityData);
+      console.log("Submitting activity data:", activityData);
+      await onSubmit(activityData);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Erreur lors de l'enregistrement de l'activité");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -190,6 +207,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             onChange={handleChange}
             className={styles.input}
             placeholder="Titre de l'activité"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -205,6 +223,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               value={formData.startDate}
               onChange={handleChange}
               className={styles.input}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -219,6 +238,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               value={formData.startTime}
               onChange={handleChange}
               className={styles.input}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -235,6 +255,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               value={formData.endDate}
               onChange={handleChange}
               className={styles.input}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -249,6 +270,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               value={formData.endTime}
               onChange={handleChange}
               className={styles.input}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -265,6 +287,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             onChange={handleChange}
             className={styles.input}
             placeholder="Adresse ou lieu de l'activité"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -279,6 +302,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
               value={formData.type}
               onChange={handleChange}
               className={styles.select}
+              disabled={isSubmitting}
             >
               <option value="with_adherents">Avec adhérents</option>
               <option value="without_adherents">Sans adhérents</option>
@@ -300,6 +324,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
                 className={styles.input}
                 min="1"
                 placeholder="Illimité si vide"
+                disabled={isSubmitting}
               />
             </div>
           )}
@@ -316,6 +341,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
                   checked={formData.transportAvailable}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isSubmitting}
                 />
                 <label
                   htmlFor="transportAvailable"
@@ -340,6 +366,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
                   className={styles.input}
                   min="1"
                   placeholder="Nombre de places disponibles"
+                  disabled={isSubmitting}
                 />
               </div>
             )}
@@ -353,6 +380,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
                   checked={formData.isPaid}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isSubmitting}
                 />
                 <label htmlFor="isPaid" className={styles.checkboxLabel}>
                   Activité payante
@@ -375,6 +403,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
                   min="0.01"
                   step="0.01"
                   placeholder="Prix de l'activité"
+                  disabled={isSubmitting}
                 />
               </div>
             )}
@@ -393,6 +422,7 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             className={styles.textarea}
             rows="4"
             placeholder="Description de l'activité"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -401,11 +431,21 @@ const ActivityForm = ({ activity, onSubmit, onCancel }) => {
             type="button"
             className={styles.cancelButton}
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Annuler
           </button>
-          <button type="submit" className={styles.submitButton}>
-            {activity ? "Mettre à jour" : "Ajouter"}
+          <button 
+            type="submit" 
+            className={styles.submitButton}
+            disabled={isSubmitting}
+          >
+            {isSubmitting 
+              ? "Enregistrement..." 
+              : activity 
+                ? "Mettre à jour" 
+                : "Ajouter"
+            }
           </button>
         </div>
       </form>
