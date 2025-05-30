@@ -92,7 +92,7 @@ class Activity {
   static async findByDateRange(startDate, endDate, options = {}) {
     try {
       const { type, accompagnateurId } = options;
-
+  
       let query = `
         SELECT DISTINCT a.*, 
           (SELECT COUNT(*) FROM activity_participants WHERE activity_id = a.id) as participant_count
@@ -102,23 +102,23 @@ class Activity {
            OR (a.end_date >= $1 AND a.end_date <= $2)
            OR (a.start_date <= $1 AND a.end_date >= $2)
       `;
-
+  
       const params = [startDate, endDate];
-
+  
       if (type) {
         params.push(type);
-        query += ` AND a.type = $${params.length}`;
+        query += ` AND a.type = ${params.length}`;
       }
-
+  
       if (accompagnateurId) {
         params.push(accompagnateurId);
-        query += ` AND (a.created_by = $${params.length} OR aa.user_id = $${params.length})`;
+        query += ` AND (a.created_by = ${params.length} OR aa.user_id = ${params.length})`;
       }
-
+  
       query += " ORDER BY a.start_date ASC";
-
+  
       const { rows } = await db.query(query, params);
-
+  
       return rows;
     } catch (error) {
       logger.error("Error finding activities by date range:", error);
